@@ -1,3 +1,5 @@
+const User = require("../models/user.model");
+
 const registerUser = async (userData) => {
     const { username, email, password } = userData;
 
@@ -5,14 +7,14 @@ const registerUser = async (userData) => {
         throw new Error("Missing required fields");
     }
 
-    return {
+    const user = new User({
         id: Date.now(),
         username,
         email,
-        role: "user",
-        xp: 0,
-        level: 1,
-    };
+        password, //Hash later
+    });
+
+    return user;
 };
 
 module.exports = {
