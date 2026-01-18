@@ -1,43 +1,50 @@
-const User = require("../models/user.model");
+const prisma = require("../utils/prisma");
 const bcrypt = require("bcryptjs");
 
-const fakeUser = new User({
-    id: 1,
-    username: "jukain",
-    email: "jukain@test.com",
-    password: bcrypt.hashSync("123456", 10),
-});
+const registerUser = async ({ email, password }) => {
+  if (!email || !password) {
+    throw new Error("Missing required fields");
+  }
 
-const registerUser = async (userData) => {
-    const { username, email, password } = userData;
+  const existingUser = await prisma.user.findUnique({
+    where: { email },
+  });
 
-    if (!username || !email || !password) {
-        throw new Error("Missing required fields");
-    }
+  if (existingUser) {
+    throw new Error("User already exists");
+  }
 
-    const hashedPassword = bcrypt.hashSync(password, 10);
+  const hashedPassword = await bcrypt.hash(password, 10);
 
-    return new User({
-        id: Date.now(),
-        username,
-        email,
-        password: hashedPassword,
-    });
+  const user = await prisma.user.create({
+    data: {
+      email,
+      password: hashedPassword,
+    },
+  });
+
+  return user;
 };
 
 const loginUser = async ({ email, password }) => {
-    if (email !== fakeUser.email) {
-        throw new Error("User not found");
-    }
+  const user = await prisma.user.findUnique({
+    where: { email },
+  });
 
-    const isMatch = bcrypt.compareSync(password, fakeUser.password);
-    if (!isMatch) {
-        throw new Error("Invalid Password");
-    }
-    return fakeUser;
+  if (!user) {
+    throw new Error("User not found");
+  }
+
+  const isMatch = await bcrypt.compare(password, user.password);
+
+  if (!isMatch) {
+    throw new Error("Invalid password");
+  }
+
+  return user;
 };
 
 module.exports = {
-    registerUser,
-    loginUser,
-}
+  registerUser,
+  loginUser,
+};
