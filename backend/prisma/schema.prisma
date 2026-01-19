@@ -18,5 +18,72 @@ model User {
   password  String
   role      String   @default("user")
   createdAt DateTime @default(now())
+
+  quizzes  Quiz[]    @relation("QuizCreator")
+  attempts Attempt[]
 }
 
+model Quiz {
+  id          Int      @id @default(autoincrement())
+  title       String
+  description String?
+  isPublished Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  creatorId Int
+  creator   User @relation("QuizCreator", fields: [creatorId], references: [id])
+
+  questions Question[]
+  attempts  Attempt[]
+}
+
+model Question {
+  id    Int    @id @default(autoincrement())
+  text  String
+  order Int
+
+  quizId Int
+  quiz   Quiz @relation(fields: [quizId], references: [id])
+
+  options AnswerOption[]
+}
+
+model AnswerOption {
+  id        Int     @id @default(autoincrement())
+  text      String
+  isCorrect Boolean @default(false)
+
+  questionId     Int
+  question       Question        @relation(fields: [questionId], references: [id])
+  attemptAnswers AttemptAnswer[]
+}
+
+model Attempt {
+  id          Int       @id @default(autoincrement())
+  score       Int       @default(0)
+  startedAt   DateTime  @default(now())
+  completedAt DateTime?
+
+  userId Int
+  user   User @relation(fields: [userId], references: [id])
+
+  quizId Int
+  quiz   Quiz @relation(fields: [quizId], references: [id])
+
+  answers AttemptAnswer[]
+}
+
+model AttemptAnswer {
+  id Int @id @default(autoincrement())
+
+  attemptId Int
+  attempt   Attempt @relation(fields: [attemptId], references: [id])
+
+  selectedOptionId Int
+  selectedOption   AnswerOption @relation(fields: [selectedOptionId], references: [id])
+}
+
+enum Role {
+  USER
+  ADMIN
+}

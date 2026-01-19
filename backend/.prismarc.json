@@ -1,3 +1,8 @@
 {
-  "schema": "prisma/schema.prisma"
+  "schema": "prisma/schema.prisma",
+  "datasources": {
+    "db": {
+      "url": "env(DATABASE_URL)"
+    }
+  }
 }
