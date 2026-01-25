@@ -3,6 +3,8 @@ const router = express.Router();
 
 const { createQuiz } = require("../controllers/quiz.controller");
 const protect = require("../middleware/auth.middleware");
+const questionRoutes = require("./question.routes");
+
 
 /**
  * @swagger
@@ -33,4 +35,5 @@ const protect = require("../middleware/auth.middleware");
  */
 
 router.post("/", protect, createQuiz);
+router.use("/:quizId/questions", questionRoutes);
 module.exports = router;
