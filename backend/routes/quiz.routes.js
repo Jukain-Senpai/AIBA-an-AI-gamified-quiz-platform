@@ -1,10 +1,13 @@
 const express = require("express");
 const router = express.Router();
 
-const { createQuiz } = require("../controllers/quiz.controller");
+const { 
+    createQuiz,
+    getQuizById
+ } = require("../controllers/quiz.controller");
 const protect = require("../middleware/auth.middleware");
 const questionRoutes = require("./question.routes");
-
+const attemptRoutes = require("./attempt.routes");
 
 /**
  * @swagger
@@ -33,7 +36,29 @@ const questionRoutes = require("./question.routes");
  *       401:
  *         description: Unauthorized
  */
-
 router.post("/", protect, createQuiz);
+/**
+ * @swagger
+ * /api/quizzes/{quizId}:
+ *   get:
+ *     summary: Get quiz with questions and options
+ *     tags: [Quiz]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: quizId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Quiz data
+ *       404:
+ *         description: Quiz not found
+ */
+router.get("/:quizId", protect, getQuizById);
+
 router.use("/:quizId/questions", questionRoutes);
+router.use("/:quizId/attempts", attemptRoutes);
 module.exports = router;

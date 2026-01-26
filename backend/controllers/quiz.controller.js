@@ -26,6 +26,38 @@ const createQuiz = async (req, res) => {
     }
 };
 
+const getQuizById = async (req, res) => {
+    try {
+        const { quizId } = req.params;
+
+        const quiz = await prisma.quiz.findUnique({
+            where: { id: Number(quizId) },
+            include: {
+                questions: {
+                    orderBy: { order: "asc" },
+                    include: {
+                        options: {
+                            select: {
+                                id: true,
+                                text: true,
+                            }
+                        }
+                    }
+                }
+            }
+        });
+        if (!quiz) {
+            return res.status(404).json({ message: "Quiz not found" });
+        }
+
+        res.status(200).json(quiz);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Failed to fetch quiz" });
+    }
+}
+
 module.exports = {
     createQuiz,
+    getQuizById,
 };

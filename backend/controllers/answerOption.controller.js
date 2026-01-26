@@ -10,6 +10,22 @@ const createAnswerOption = async (req, res) => {
             
         }
 
+        if (isCorrect) {
+            const existingCorrect = await prisma.answerOption.findFirst({
+                where: {
+                    questionId: Number(questionId),
+                    isCorrect: true,
+                },
+            });
+
+            if (existingCorrect) {
+                return res.status(400).json({
+                    message: "This question already has a correct answer",
+
+                });
+            }
+        }
+
         const options = await prisma.answerOption.create({
             data: {
                 text,
