@@ -39,16 +39,12 @@ export default {
                     password: this.password,
                 });
 
-                const loginRes = await api.post("/auth/login", {
-                    email: this.email,
-                    password: this.password,
-                });
-
-                localStorage.setItem("token", loginRes.data.token);
-                this.$router.push("/quizzes");
+                this.$router.push("/login");
             } catch (err) {
                 this.error = 
-                err.response?.data?.message || "Registration failed.";
+                err.response?.data?.message || 
+                err.response?.data?.error ||
+                "Registration failed.";
             }
         },
     },

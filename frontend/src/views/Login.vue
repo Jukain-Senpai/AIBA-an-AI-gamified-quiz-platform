@@ -1,8 +1,3 @@
-<script setup lang="ts">
-import { error } from 'node:console';
-
-</script>
-
 <template>
  <div class="auth-container">
   <h1>Login</h1>
@@ -49,7 +44,7 @@ export default {
                 this.$router.push("/quizzes");
             } catch (err) {
                 this.error = 
-                err.response?.data?.message || "Login fauiled.";
+                err.response?.data?.message || "Login failed.";
             }
         },
     },
