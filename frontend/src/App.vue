@@ -212,9 +212,6 @@ body, html {
 /* 3. Center the Login card in the remaining space */
 .content {
   flex: 1;
-  display: flex;
-  justify-content: center;
-  align-items: center;
   padding: 2rem;
 }
 
