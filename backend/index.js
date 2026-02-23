@@ -16,9 +16,11 @@ const authRoutes = require("./routes/auth.routes");
 const quizRoutes = require("./routes/quiz.routes");
 const answerOptionRoutes = require("./routes/answerOption.routes");
 
+app.use("/users", require("./routes/users"));
 app.use("/api/auth", authRoutes);
 app.use("/api/quizzes", quizRoutes);
 app.use("/api", answerOptionRoutes);
+
 
 app.get("/", (req, res) => {
   res.send("AIBA Backend Server is still running!");

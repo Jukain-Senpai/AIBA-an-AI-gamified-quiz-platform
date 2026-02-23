@@ -19,6 +19,12 @@ model User {
   role      String   @default("user")
   createdAt DateTime @default(now())
 
+  xp        Int      @default(0)
+  level     Int      @default(1)
+  title     String   @default("Novice")
+  path      String   @default("Unassigned")
+  avatar    String   @default("NeonKnight_M.jpg")
+
   quizzes  Quiz[]    @relation("QuizCreator")
   attempts Attempt[]
 }

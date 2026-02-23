@@ -1,0 +1,6 @@
+-- AlterTable
+ALTER TABLE "User" ADD COLUMN     "avatar" TEXT NOT NULL DEFAULT 'NeonKnight_M.jpg',
+ADD COLUMN     "level" INTEGER NOT NULL DEFAULT 1,
+ADD COLUMN     "path" TEXT NOT NULL DEFAULT 'Unassigned',
+ADD COLUMN     "title" TEXT NOT NULL DEFAULT 'Novice',
+ADD COLUMN     "xp" INTEGER NOT NULL DEFAULT 0;
