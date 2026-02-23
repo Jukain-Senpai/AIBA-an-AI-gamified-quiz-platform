@@ -59,7 +59,7 @@ export default {
                     password: this.password,
                 });
                 localStorage.setItem("token", res.data.token);
-                this.$router.push("/quizzes");
+                this.$router.push("/dashboard");
             } catch (err) {
                 this.error = err.response?.data?.message || "Login failed.";
             }

@@ -3,6 +3,7 @@ import { createRouter, createWebHistory } from "vue-router";
 import Landing from "../views/Landing.vue";
 import Login from "../views/Login.vue";
 import Register from "../views/Register.vue";
+import Dashboard from "../views/Dashboard.vue";
 import QuizList from "../views/QuizList.vue";
 import QuizDetail from "../views/QuizDetail.vue";
 import QuizResult from "../views/QuizResult.vue";
@@ -13,6 +14,7 @@ const routes = [
 
     { path: "/login", component: Login },
     { path: "/register", component: Register },
+    { path: "/dashboard", component: Dashboard },
     { path: "/quizzes", component: QuizList },
     { path: "/quizzes/:id", component: QuizDetail },
     { path: "/result", component: QuizResult },

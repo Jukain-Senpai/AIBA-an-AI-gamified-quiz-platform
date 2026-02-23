@@ -57,7 +57,11 @@ export default {
           email: this.email,
           password: this.password,
         });
-        this.$router.push("/login");
+
+        const token = response.data.token;
+        localStorage.setItem("token", token);
+
+        this.$router.push("/dashboard");
       } catch (err) {
         this.error = 
           err.response?.data?.message || 
