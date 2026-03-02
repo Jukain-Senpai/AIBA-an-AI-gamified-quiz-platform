@@ -78,12 +78,14 @@ const submitQuizAttempt = async (req, res) => {
 
         let xp = user.xp;
         let level = user.level;
+        let skillPoints = user.skillPoints;
         
         let xpToNext = level *100;
 
         while (xp >= xpToNext) {
             xp -= xpToNext;
             level += 1;
+            skillPoints += 1;
             xpToNext = level * 100;
         }
 
@@ -91,7 +93,8 @@ const submitQuizAttempt = async (req, res) => {
             where: { id:userId },
             data: {
                 xp,
-                level
+                level,
+                skillPoints
             }
         });
 
@@ -101,7 +104,8 @@ const submitQuizAttempt = async (req, res) => {
             totalQuestions,
             xpEarned,
             level: updatedUser.level,
-            currentXp: updatedUser.xp
+            currentXp: updatedUser.xp,
+            skillPoints: updatedUser.skillPoints
         });
 
     } catch (error) {

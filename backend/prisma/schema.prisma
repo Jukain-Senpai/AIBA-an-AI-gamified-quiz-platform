@@ -21,12 +21,37 @@ model User {
 
   xp        Int      @default(0)
   level     Int      @default(1)
+  skillPoints Int    @default(0)
   title     String   @default("Novice")
   path      String   @default("Unassigned")
   avatar    String   @default("NeonKnight_M.jpg")
+  
 
   quizzes  Quiz[]    @relation("QuizCreator")
   attempts Attempt[]
+  skills   UserSkill[]
+}
+
+model Skill {
+  id             Int        @id @default(autoincrement())
+  name           String
+  description    String?
+  path           String
+  requiredLevel  Int
+  cost           Int
+
+  User      UserSkill[]
+}
+
+model UserSkill{
+  id              Int      @id @default(autoincrement())
+  userId          Int
+  skillId         Int
+
+  user            User     @relation(fields: [userId], references: [id])
+  skill            Skill     @relation(fields: [skillId], references: [id])
+
+  @@unique([userId, skillId])
 }
 
 model Quiz {
