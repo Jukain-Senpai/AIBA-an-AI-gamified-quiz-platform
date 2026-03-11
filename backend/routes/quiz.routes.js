@@ -3,7 +3,9 @@ const router = express.Router();
 
 const { 
     createQuiz,
-    getQuizById
+    getQuizById,
+    getAllQuizzes,
+    checkAnswer
  } = require("../controllers/quiz.controller");
 const protect = require("../middleware/auth.middleware");
 const questionRoutes = require("./question.routes");
@@ -57,8 +59,53 @@ router.post("/", protect, createQuiz);
  *       404:
  *         description: Quiz not found
  */
+
+router.get("/", protect, getAllQuizzes);
+/**
+ * @swagger
+ * /api/quizzes:
+ *   get:
+ *     summary: Get all quizzes
+ *     tags: [Quiz]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: List of quizzes
+ */
+
 router.get("/:quizId", protect, getQuizById);
+
+router.post("/check-answer", protect, checkAnswer);
+/**
+ * @swagger
+ * /api/quizzes/check-answer:
+ *   post:
+ *     summary: Check if selected answer is correct
+ *     tags: [Quiz]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - optionId
+ *             properties:
+ *               optionId:
+ *                 type: integer
+ *     responses:
+ *       200:
+ *         description: Result of the answer check
+ *       400:
+ *         description: optionId missing
+ *       404:
+ *         description: Option not found
+ */
 
 router.use("/:quizId/questions", questionRoutes);
 router.use("/:quizId/attempts", attemptRoutes);
+
 module.exports = router;
