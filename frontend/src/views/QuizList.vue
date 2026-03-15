@@ -14,7 +14,7 @@
 
           <div class="meta">
             <span class="question">
-              {{ quiz._count.questions }} questions
+              {{ quiz._count.questions || 0 }} questions
             </span>
 
             <span class="date">
@@ -52,8 +52,18 @@ export default {
   methods: {
     async fetchQuizzes() {
       try{
-        const res = await fetch("http://localhost:5000/api/quizzes");
+        const token = localStorage.getItem("token");
+
+        const res = await fetch("http://localhost:5000/api/quizzes", {
+          headers: {
+            "Authorization": `Bearer ${token}`
+          }
+        });
+
         const data = await res.json();
+
+        console.log("Loaded quizzes:", data);
+
         this.quizzes = data;
       } catch (err) {
         console.error("Failed to load quizzes", err);
