@@ -1,3 +1,4 @@
+
 const prisma = require("../utils/prisma");
 
 
@@ -5,21 +6,40 @@ const createQuiz = async (req, res) => {
     console.log("REQ.USER =", req.user);
 
     try {
-        const { title, description } = req.body;
+        const { quiz,questions } = req.body;
+        const { title, description } = quiz;
 
         if(!title) {
             return res.status(400).json({ message: "Title is required"});
         }
 
-        const quiz = await prisma.quiz.create({
+        const newQuiz = await prisma.quiz.create({
             data: {
                 title,
                 description,
-                creatorId: req.user.id,            
+                creatorId: req.user.id,
+                
+                questions: {
+                    create: questions
+                    .filter(q => q.text && q.text.trim() !== "")
+                    .map((q,index) => ({
+                        text:q.text,
+                        order:index + 1,
+
+                        options: {
+                            create: q.answers
+                            .filter(a => a.trim() !== "")
+                            .map((answer, i) => ({
+                                text: answer,
+                                isCorrect: q.correctIndex === i
+                            }))
+                        }
+                    }))
+                }
             },
         });
 
-        res.status(201).json(quiz);
+        res.status(201).json(newQuiz);
     } catch (error) {
         console.error(error);
         res.status(500).json({ message: "Failed to create quiz" });

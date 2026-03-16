@@ -58,6 +58,8 @@ model Quiz {
   id          Int      @id @default(autoincrement())
   title       String
   description String?
+  difficulty  String   @default("Easy")
+  category    String   @default("General")
   isPublished Boolean  @default(false)
   createdAt   DateTime @default(now())
 
