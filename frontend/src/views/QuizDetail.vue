@@ -185,6 +185,7 @@ export default {
 
 .feedback {
   margin-top: 1.5rem;
+  margin-bottom: 1rem; 
   font-size: 1.2rem;
 }
 

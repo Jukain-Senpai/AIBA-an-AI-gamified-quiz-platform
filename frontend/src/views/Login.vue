@@ -1,42 +1,44 @@
 <template>
-  <div class="auth-card">
-    <div class="card-header">
-      <img src="/src/assets/Logo.svg" class="sparkle-icon" />
+  <div class="auth-page">
+    <div class="auth-card">
+      <div class="card-header">
+        <img src="/src/assets/Logo.svg" class="sparkle-icon" />
 
-      <h1>Welcome Back</h1>
-      <p class="subtitle">Enter the realm of knowledge</p>
+        <h1>Welcome Back</h1>
+        <p class="subtitle">Enter the realm of knowledge</p>
+      </div>
+
+      <form @submit.prevent="handleLogin" class="auth-form">
+        <div class="input-group">
+          <label>Email</label>
+          <input 
+            type="email" 
+            placeholder="AIBA_1@gmail.com" 
+            v-model="email" 
+            required 
+          />
+        </div>
+
+        <div class="input-group">
+          <label>Password</label>
+          <input 
+            type="password" 
+            placeholder="••••••••" 
+            v-model="password" 
+            required 
+          />
+        </div>
+
+        <button type="submit" class="login-btn">Login</button>
+        
+        <p v-if="error" class="error">{{ error }}</p>
+
+        <p class="signup-link">
+          New adventurer? <router-link to="/register">Create account</router-link>
+        </p>
+      </form>
     </div>
-
-    <form @submit.prevent="handleLogin" class="auth-form">
-      <div class="input-group">
-        <label>Email</label>
-        <input 
-          type="email" 
-          placeholder="AIBA_1@gmail.com" 
-          v-model="email" 
-          required 
-        />
-      </div>
-
-      <div class="input-group">
-        <label>Password</label>
-        <input 
-          type="password" 
-          placeholder="••••••••" 
-          v-model="password" 
-          required 
-        />
-      </div>
-
-      <button type="submit" class="login-btn">Login</button>
-      
-      <p v-if="error" class="error">{{ error }}</p>
-
-      <p class="signup-link">
-        New adventurer? <router-link to="/register">Create account</router-link>
-      </p>
-    </form>
-  </div>
+  </div>  
 </template>
 
 <script>
@@ -69,6 +71,18 @@ export default {
 </script>
 
 <style scoped>
+.auth-page {
+  min-height: 100vh;
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  padding: 2rem;
+
+  
+}
+
 .auth-card {
   background: rgba(30, 15, 55, 0.5);
   border: 1px solid rgba(139, 92, 246, 0.25);

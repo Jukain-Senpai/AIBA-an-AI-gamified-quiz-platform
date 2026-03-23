@@ -1,42 +1,44 @@
 <template>
-  <div class="auth-card">
-    <div class="card-header">
-      <img src="/src/assets/Logo.svg" class="sparkle-icon" />
+  <div class="auth-page">
+    <div class="auth-card">
+      <div class="card-header">
+        <img src="/src/assets/Logo.svg" class="sparkle-icon" />
 
-      <h1>Begin Your Quest</h1>
-      <p class="subtitle">Create your adventurer profile</p>
+        <h1>Begin Your Quest</h1>
+        <p class="subtitle">Create your adventurer profile</p>
+      </div>
+
+      <form @submit.prevent="handleRegister" class="auth-form">
+        <div class="input-group">
+          <label>Email</label>
+          <input 
+            type="email" 
+            placeholder="AIBA1@gmail.com" 
+            v-model="email" 
+            required 
+          />
+        </div>
+
+        <div class="input-group">
+          <label>Password</label>
+          <input 
+            type="password" 
+            placeholder="••••••••" 
+            v-model="password" 
+            required 
+          />
+        </div>
+
+        <button type="submit" class="register-btn">Create Account</button>
+        
+        <p v-if="error" class="error">{{ error }}</p>
+
+        <p class="login-link">
+          Already an adventurer? <router-link to="/login">Sign in</router-link>
+        </p>
+      </form>
     </div>
-
-    <form @submit.prevent="handleRegister" class="auth-form">
-      <div class="input-group">
-        <label>Email</label>
-        <input 
-          type="email" 
-          placeholder="AIBA1@gmail.com" 
-          v-model="email" 
-          required 
-        />
-      </div>
-
-      <div class="input-group">
-        <label>Password</label>
-        <input 
-          type="password" 
-          placeholder="••••••••" 
-          v-model="password" 
-          required 
-        />
-      </div>
-
-      <button type="submit" class="register-btn">Create Account</button>
-      
-      <p v-if="error" class="error">{{ error }}</p>
-
-      <p class="login-link">
-        Already an adventurer? <router-link to="/login">Sign in</router-link>
-      </p>
-    </form>
-  </div>
+  </div>  
 </template>
 
 <script>
@@ -58,7 +60,12 @@ export default {
           password: this.password,
         });
 
-        const token = response.data.token;
+        const res = await api.post("/auth/register", {
+          email: this.email,
+          password: this.password,
+        });
+
+        const token = res.data.token;
         localStorage.setItem("token", token);
 
         this.$router.push("/dashboard");
@@ -74,6 +81,18 @@ export default {
 </script>
 
 <style scoped>
+.auth-page {
+  min-height: 100vh;
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  padding: 2rem;
+
+ 
+}
+
 .auth-card {
   background: rgba(30, 15, 55, 0.5);
   border: 1px solid rgba(139, 92, 246, 0.25);

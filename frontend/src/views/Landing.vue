@@ -18,13 +18,13 @@
             </div>
 
             <div class="hero-right">
-                <img src="/src/assets/Progression.svg" class="hero-illustration" />
+                <img src="/src/assets/Progression.png" class="hero-illustration" />
             </div>
         </section>
 
         <section class ="feature-section">
             <div class="feature-image">
-                <img src="/src/assets/Skills.svg" />
+                <img src="/src/assets/Skills.png" />
             </div>
             <div class="feature-text">
                 <h2> Dynamic Skill Tree System</h2>
@@ -37,7 +37,7 @@
         </section>
         <section class="feature-section reverse">
             <div class="feature-image">
-                <img src="/src/assets/AI.svg" />
+                <img src="/src/assets/AI.png" />
             </div>
             <div class="feature-text">
                 <h2> AI Quiz Engine</h2>
@@ -50,7 +50,7 @@
 
         <section class="feature-section">
             <div class="feature-image">
-                <img src="/src/assets/Forum.svg" />
+                <img src="/src/assets/Forum.png" />
             </div>
             <div class="feature-text">
                 <h2> community Forum</h2>
@@ -66,22 +66,22 @@
 
             <div class="steps">
                 <div class="step-card">
-                    <img src="/src/assets/StepRegister.svg" />
+                    <img src="/src/assets/StepRegister.png" />
                     <p>Register & Create Avatar</p>
                 </div>
 
                 <div class="step-card">
-                    <img src="/src/assets/StepQuiz.svg" />
+                    <img src="/src/assets/StepQuiz.png" />
                     <p>AI Quizzes</p>
                 </div> 
                 
                 <div class="step-card">
-                    <img src="/src/assets/StepSkill.svg" />
+                    <img src="/src/assets/StepSkill.png" />
                     <p>Unlock Skill Branches</p>
                 </div>  
                 
                 <div class="step-card">
-                    <img src="/src/assets/StepForum.svg" />
+                    <img src="/src/assets/StepForum.png" />
                     <p>Engage in Forum</p>
                 </div>                
             </div>
@@ -171,9 +171,19 @@ export default {
   background: rgba(139, 92, 246, 0.15);
 }
 
+.hero-right {
+  flex: 1; /* take half of hero */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
 .hero-illustration {
-  width: 350px;
-  filter: drop-shadow(0 0 20px rgba(139, 92, 246, 0.4));
+  width: 100%;
+  max-width: 600px; /* control max size */
+  height: auto;
+
+  filter: drop-shadow(0 0 30px rgba(139, 92, 246, 0.5));
 }
 
 /* FEATURE SECTIONS */

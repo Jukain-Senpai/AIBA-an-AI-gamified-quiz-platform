@@ -6,7 +6,7 @@
 
       <div class="form-row">
         <label>Quiz Title</label>
-        <input v-model="quiz.title" placeholder="Enter your quiz Title"/>
+        <input class="input-field" v-model="quiz.title" placeholder="Enter your quiz Title"/>
       </div>
 
       <div class="form-row">
@@ -189,61 +189,170 @@ export default {
 <style scoped>
 
 .create-wrapper{
-  max-width:900px;
+  max-width:950px;
   margin:auto;
   padding:40px;
+
+  /* Background gradient */
+  background: linear-gradient(135deg, #0f172a, #1e1b4b);
+  min-height:100vh;
+  color:#e9d5ff;
 }
 
+/* ===== CARD / BOX ===== */
 .box{
-  background:#1b1333;
-  padding:25px;
+  background:#1e1b4b;
+  padding:30px;
   margin-bottom:30px;
-  border-radius:12px;
+  border-radius:16px;
+
+  border:1px solid rgba(139, 92, 246, 0.3);
+  box-shadow:0 10px 30px rgba(0,0,0,0.4);
 }
 
+/* ===== HEADINGS ===== */
+h2, h3{
+  margin-bottom:20px;
+  color:#d8b4fe;
+}
+
+/* ===== FORM LAYOUT ===== */
+.form-row{
+  margin-bottom:25px;
+  display:flex;
+  flex-direction:column; /* THIS FIXES YOUR SPACING */
+}
+
+label{
+  margin-bottom:8px;
+  font-size:14px;
+  color:rgba(216,180,254,0.7);
+}
+
+/* ===== INPUTS ===== */
+input,
+textarea,
+select{
+  width:100%;
+  padding:14px;
+  border-radius:10px;
+
+  background:#0f172a;
+  border:1px solid rgba(139, 92, 246, 0.3);
+
+  color:#f3f4f6;
+  font-size:15px;
+
+  transition:0.2s;
+}
+
+input:focus,
+textarea:focus,
+select:focus{
+  outline:none;
+  border:1px solid #22d3ee;
+  box-shadow:0 0 0 2px rgba(34,211,238,0.3);
+}
+
+/* Make textarea bigger */
+textarea{
+  min-height:100px;
+  resize:vertical;
+}
+
+/* ===== GRID ===== */
 .grid{
   display:grid;
   grid-template-columns:1fr 1fr;
-  gap:20px;
+  gap:25px;
 }
 
-.form-row{
-  margin-bottom:15px;
+/* ===== QUESTION INPUT ===== */
+.box input{
+  margin-top:10px;
 }
 
+/* ===== ANSWERS ===== */
 .answers{
-  margin-top:20px;
+  margin-top:25px;
 }
 
 .answer-row{
   display:flex;
   align-items:center;
-  margin-bottom:10px;
+  gap:12px;
+  margin-bottom:15px;
 }
 
+/* ===== CHOICE BUTTON ===== */
 .choice{
-  width:40px;
-  height:40px;
-  border-radius:10px;
-  margin-right:10px;
-  border:1px solid #555;
+  width:45px;
+  height:45px;
+  border-radius:12px;
+
+  border:1px solid rgba(139, 92, 246, 0.3);
+  background:#0f172a;
+
+  color:#d8b4fe;
+  font-weight:bold;
+
+  cursor:pointer;
+  transition:0.2s;
 }
 
+.choice:hover{
+  background:#1e293b;
+}
+
+/* ===== CORRECT ANSWER ===== */
 .correct{
-  background:#2ecc71;
+  background:#10b981;
   color:white;
+  border:none;
 }
 
+/* ===== BUTTONS ===== */
 .add-btn{
-  margin-top:15px;
+  margin-top:20px;
+  padding:12px 20px;
+
+  border:none;
+  border-radius:10px;
+
+  background:#06b6d4;
+  color:white;
+
+  cursor:pointer;
+  font-weight:600;
+
+  transition:0.2s;
 }
 
+.add-btn:hover{
+  background:#0891b2;
+}
+
+/* ===== FOOTER ===== */
 .footer{
   text-align:right;
 }
 
 .draft-btn{
-  padding:10px 20px;
+  padding:14px 25px;
+  border:none;
+  border-radius:12px;
+
+  background:#f59e0b;
+  color:#030213;
+
+  font-weight:bold;
+  cursor:pointer;
+
+  transition:0.2s;
+}
+
+.draft-btn:hover{
+  background:#d97706;
 }
 
 </style>
