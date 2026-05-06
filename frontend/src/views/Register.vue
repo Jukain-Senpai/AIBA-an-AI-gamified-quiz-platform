@@ -10,6 +10,16 @@
 
       <form @submit.prevent="handleRegister" class="auth-form">
         <div class="input-group">
+          <label>Username</label>
+          <input 
+            type="text" 
+            placeholder="KnightScholar" 
+            v-model="username" 
+            required 
+          />
+        </div>
+
+        <div class="input-group">
           <label>Email</label>
           <input 
             type="email" 
@@ -27,6 +37,21 @@
             v-model="password" 
             required 
           />
+        </div>
+
+        <div class="input-group avatar-selection">
+          <label>Choose an Avatar</label>
+          <div class="avatar-grid">
+            <div 
+              v-for="img in availableAvatars" 
+              :key="img"
+              class="avatar-option"
+              :class="{ selected: avatar === img }"
+              @click="avatar = img"
+            >
+              <img :src="getAvatarUrl(img)" />
+            </div>
+          </div>
         </div>
 
         <button type="submit" class="register-btn">Create Account</button>
@@ -47,22 +72,31 @@ import api from '../services/api';
 export default {
   data() {
     return {
+      username: "",
       email: "",
       password: "",
+      avatar: "NeonKnight_M.jpg", // default selection
       error: null,
+      availableAvatars: [
+        'NeonKnight_M.jpg',
+        'NeonKnight_F.jpg',
+        'knight.jpg',
+        'download (1).jpg',
+        'AI.png'
+      ]
     };
   },
   methods: {
+    getAvatarUrl(filename) {
+      return `/src/assets/${filename}`;
+    },
     async handleRegister() {
       try {
-        await api.post("/auth/register", {
-          email: this.email,
-          password: this.password,
-        });
-
         const res = await api.post("/auth/register", {
+          username: this.username,
           email: this.email,
           password: this.password,
+          avatar: this.avatar,
         });
 
         const token = res.data.token;
@@ -227,5 +261,41 @@ input:focus {
   padding: 0.5rem;
   background: rgba(239, 68, 68, 0.1);
   border-radius: 6px;
+}
+
+.avatar-selection {
+  margin-top: 1.5rem;
+}
+
+.avatar-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.avatar-option {
+  border-radius: 8px;
+  overflow: hidden;
+  border: 2px solid transparent;
+  cursor: pointer;
+  transition: all 0.2s;
+  height: 60px;
+}
+
+.avatar-option img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.avatar-option:hover {
+  transform: scale(1.05);
+}
+
+.avatar-option.selected {
+  border-color: #22d3ee;
+  box-shadow: 0 0 10px rgba(34, 211, 238, 0.5);
 }
 </style>

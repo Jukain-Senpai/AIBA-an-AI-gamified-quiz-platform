@@ -1,25 +1,37 @@
 const prisma = require("../utils/prisma");
 const bcrypt = require("bcryptjs");
 
-const registerUser = async ({ email, password }) => {
-  if (!email || !password) {
+const registerUser = async ({ email, password, username, avatar }) => {
+  if (!email || !password || !username) {
     throw new Error("Missing required fields");
   }
 
-  const existingUser = await prisma.user.findUnique({
+  // Check if email already exists
+  const existingEmail = await prisma.user.findUnique({
     where: { email },
   });
 
-  if (existingUser) {
-    throw new Error("User already exists");
+  if (existingEmail) {
+    throw new Error("Email already registered");
+  }
+
+  // Check if username already exists
+  const existingUsername = await prisma.user.findUnique({
+    where: { username },
+  });
+
+  if (existingUsername) {
+    throw new Error("Username already taken");
   }
 
   const hashedPassword = await bcrypt.hash(password, 10);
 
   const user = await prisma.user.create({
     data: {
+      username,
       email,
       password: hashedPassword,
+      avatar: avatar || "NeonKnight_M.jpg",
     },
   });
 

@@ -190,8 +190,14 @@ export default {
         this.editForm.email = this.user.email || '';
         this.editForm.avatar = this.user.avatar || 'NeonKnight_M.jpg';
       } catch (err) {
-        this.error = "Failed to load profile. Please try again.";
-        console.error(err);
+        if (err.response?.status === 401) {
+          // Token is invalid or expired
+          localStorage.removeItem("token");
+          this.$router.push("/login");
+        } else {
+          this.error = "Failed to load profile. Please try again.";
+          console.error(err);
+        }
       } finally {
         this.loading = false;
       }

@@ -12,9 +12,19 @@ const testAuth = (req, res) => {
 const register = async (req, res) => {
     try {
         const user = await registerUser(req.body);
+        
+        const token = jwt.sign(
+            { id: user.id,
+            email: user.email, 
+            role: user.role || "user" },
+            process.env.JWT_SECRET,
+            { expiresIn: "1h" }
+        );
+
         res.status(201).json({
             message: "User registered successfully",
             user,
+            token,
         });
     } catch (error) {
         res.status(400).json({
