@@ -1,0 +1,17 @@
+<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="dashGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#E879F9"/>
+      <stop offset="50%" stop-color="#C026D3"/>
+      <stop offset="100%" stop-color="#A855F7"/>
+    </linearGradient>
+  </defs>
+  <!-- Top Left -->
+  <rect x="10" y="10" width="35" height="35" rx="6" fill="url(#dashGradient)" stroke="#7C3AED" stroke-width="3"/>
+  <!-- Top Right -->
+  <rect x="55" y="10" width="35" height="25" rx="6" fill="url(#dashGradient)" stroke="#7C3AED" stroke-width="3"/>
+  <!-- Bottom Left -->
+  <rect x="10" y="55" width="35" height="35" rx="6" fill="url(#dashGradient)" stroke="#7C3AED" stroke-width="3"/>
+  <!-- Bottom Right -->
+  <rect x="55" y="45" width="35" height="45" rx="6" fill="url(#dashGradient)" stroke="#7C3AED" stroke-width="3"/>
+</svg>

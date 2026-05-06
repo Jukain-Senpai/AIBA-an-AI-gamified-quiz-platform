@@ -22,22 +22,44 @@
           <img src="/src/assets/Home.svg" class="nav-icon" />
           <span>Home</span>
         </router-link>
-        <router-link to="/quizzes" class="nav-item">
-          <img src="/src/assets/Quiz.svg" class="nav-icon" />
-          <span>Quizzes</span>
-        </router-link>
-        <router-link to="/skills" class="nav-item">
-          <img src="/src/assets/Skills.svg" class="nav-icon" />
-          <span>Skills</span>
-        </router-link>
-        <router-link to="/forum" class="nav-item">
-          <img src="/src/assets/Forum.svg" class="nav-icon" />
-          <span>Forum</span>
-        </router-link>
-        <router-link to="/profile" class="nav-item">
-          <img src="/src/assets/Profile.svg" class="nav-icon" />
-          <span>Profile</span>
-        </router-link>
+
+        <!-- Logged In Links -->
+        <template v-if="isLoggedIn">
+          <router-link to="/dashboard" class="nav-item">
+            <img src="/src/assets/Dashboard.svg" class="nav-icon" />
+            <span>Dashboard</span>
+          </router-link>
+          <router-link to="/quizzes" class="nav-item">
+            <img src="/src/assets/Quiz.svg" class="nav-icon" />
+            <span>Quizzes</span>
+          </router-link>
+          <router-link to="/skills" class="nav-item">
+            <img src="/src/assets/Skills.svg" class="nav-icon" />
+            <span>Skills</span>
+          </router-link>
+          <router-link to="/forum" class="nav-item">
+            <img src="/src/assets/Forum.svg" class="nav-icon" />
+            <span>Forum</span>
+          </router-link>
+          <router-link to="/profile" class="nav-item">
+            <img src="/src/assets/Profile.svg" class="nav-icon" />
+            <span>Profile</span>
+          </router-link>
+          <a href="#" @click.prevent="logout" class="nav-item logout-link">
+            <img src="/src/assets/Logout.svg" class="nav-icon" />
+            <span>Logout</span>
+          </a>
+        </template>
+
+        <!-- Logged Out Links -->
+        <template v-else>
+          <router-link to="/login" class="nav-item">
+            <span>Login</span>
+          </router-link>
+          <router-link to="/register" class="nav-item">
+            <span>Register</span>
+          </router-link>
+        </template>
       </div>
     </nav>
 
@@ -58,18 +80,37 @@
 
 <script>
 export default {
+  data() {
+    return {
+      isLoggedIn: !!localStorage.getItem("token")
+    };
+  },
+  watch: {
+    // Re-check login status whenever the route changes
+    $route() {
+      this.isLoggedIn = !!localStorage.getItem("token");
+    }
+  },
   computed: {
     currentPageName() {
       const routeNames = {
         '/': 'Home',
         '/login': 'Login Page',
         '/register': 'Register',
+        '/dashboard': 'Dashboard',
         '/quizzes': 'Quizzes',
         '/skills': 'Skills',
         '/forum': 'Forum',
         '/profile': 'Profile'
       };
       return routeNames[this.$route.path] || 'MysticQuest';
+    }
+  },
+  methods: {
+    logout() {
+      localStorage.removeItem("token");
+      this.isLoggedIn = false;
+      this.$router.push("/login");
     }
   }
 };
@@ -207,6 +248,24 @@ body, html {
 .nav-item:hover .nav-icon,
 .nav-item.router-link-active .nav-icon {
   opacity: 1;
+}
+
+.logout-link {
+  color: #ff4d4d; /* Brighter red */
+}
+
+.logout-link .nav-icon {
+  opacity: 1;
+  filter: drop-shadow(0 0 5px rgba(255, 77, 77, 0.6));
+}
+
+.logout-link:hover {
+  background: rgba(255, 77, 77, 0.15) !important;
+  color: #ff6666;
+}
+
+.logout-link:hover .nav-icon {
+  filter: drop-shadow(0 0 10px rgba(255, 77, 77, 0.9));
 }
 
 /* 3. Center the Login card in the remaining space */
