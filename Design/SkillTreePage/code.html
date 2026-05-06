@@ -1,0 +1,127 @@
+import { NavBar } from '../components/NavBar';
+import { Footer } from '../components/Footer';
+import { Lock, Check } from 'lucide-react';
+
+export function SkillTreePage() {
+return (
+<div className="flex flex-col h-full">
+  <NavBar />
+
+  <main className="flex-1 px-6 py-8 overflow-auto">
+    <div className="max-w-5xl mx-auto">
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-2xl text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-400">
+          Skill Tree
+        </h1>
+        <div className="bg-slate-800/40 border border-purple-500/30 rounded-lg px-4 py-2">
+          <span className="text-sm text-purple-300">Available Points: </span>
+          <span className="text-lg text-amber-400">8</span>
+        </div>
+      </div>
+
+      {/* Skill Tree Visualization */}
+      <div className="relative bg-slate-800/20 border border-purple-500/20 rounded-xl p-8">
+        <div className="flex justify-center gap-12">
+          {/* Strength Path */}
+          <div className="space-y-6">
+            <div className="text-center mb-4">
+              <h3 className="text-sm text-red-400">Strength Path</h3>
+              <p className="text-xs text-purple-400/60">Knight</p>
+            </div>
+
+            <SkillNode name="Shield Mastery" tier={1} isUnlocked={true} color="red" />
+            <div className="flex justify-center">
+              <div className="w-0.5 h-8 bg-red-400/30" />
+            </div>
+            <SkillNode name="Battle Fury" tier={2} isUnlocked={true} color="red" />
+            <div className="flex justify-center">
+              <div className="w-0.5 h-8 bg-red-400/30" />
+            </div>
+            <SkillNode name="Guardian's Wall" tier={3} isUnlocked={false} color="red" />
+          </div>
+
+          {/* Intelligence Path */}
+          <div className="space-y-6">
+            <div className="text-center mb-4">
+              <h3 className="text-sm text-cyan-400">Intelligence Path</h3>
+              <p className="text-xs text-purple-400/60">Mage</p>
+            </div>
+
+            <SkillNode name="Quick Thinking" tier={1} isUnlocked={true} color="cyan" />
+            <div className="flex justify-center">
+              <div className="w-0.5 h-8 bg-cyan-400/30" />
+            </div>
+            <SkillNode name="Arcane Knowledge" tier={2} isUnlocked={false} color="cyan" />
+            <div className="flex justify-center">
+              <div className="w-0.5 h-8 bg-cyan-400/30" />
+            </div>
+            <SkillNode name="Time Manipulation" tier={3} isUnlocked={false} color="cyan" />
+          </div>
+
+          {/* Social Path */}
+          <div className="space-y-6">
+            <div className="text-center mb-4">
+              <h3 className="text-sm text-emerald-400">Social Path</h3>
+              <p className="text-xs text-purple-400/60">Bard</p>
+            </div>
+
+            <SkillNode name="Community Help" tier={1} isUnlocked={true} color="emerald" />
+            <div className="flex justify-center">
+              <div className="w-0.5 h-8 bg-emerald-400/30" />
+            </div>
+            <SkillNode name="Crowd Wisdom" tier={2} isUnlocked={true} color="emerald" />
+            <div className="flex justify-center">
+              <div className="w-0.5 h-8 bg-emerald-400/30" />
+            </div>
+            <SkillNode name="Rally the Masses" tier={3} isUnlocked={false} color="emerald" />
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <Footer />
+</div>
+);
+}
+
+interface SkillNodeProps {
+name: string;
+tier: number;
+isUnlocked: boolean;
+color: 'red' | 'cyan' | 'emerald';
+}
+
+function SkillNode({ name, tier, isUnlocked, color }: SkillNodeProps) {
+const colorClasses = {
+red: {
+unlocked: 'bg-gradient-to-br from-red-500 to-red-600 border-red-400 shadow-[0_0_20px_rgba(239,68,68,0.4)]',
+locked: 'bg-slate-900/50 border-red-400/30'
+},
+cyan: {
+unlocked: 'bg-gradient-to-br from-cyan-500 to-cyan-600 border-cyan-400 shadow-[0_0_20px_rgba(34,211,238,0.4)]',
+locked: 'bg-slate-900/50 border-cyan-400/30'
+},
+emerald: {
+unlocked: 'bg-gradient-to-br from-emerald-500 to-emerald-600 border-emerald-400 shadow-[0_0_20px_rgba(52,211,153,0.4)]',
+locked: 'bg-slate-900/50 border-emerald-400/30'
+}
+};
+
+const classes = isUnlocked ? colorClasses[color].unlocked : colorClasses[color].locked;
+
+return (
+<div className={`relative w-32 h-32 rounded-full border-4 ${classes} flex flex-col items-center justify-center
+  transition-all hover:scale-105 cursor-pointer`}>
+  {isUnlocked ? (
+  <Check className="w-8 h-8 text-white mb-2" />
+  ) : (
+  <Lock className="w-8 h-8 text-purple-400 mb-2" />
+  )}
+  <div className="text-center px-2">
+    <p className="text-xs text-white">{name}</p>
+    <p className="text-[10px] text-white/60">Tier {tier}</p>
+  </div>
+</div>
+);
+}

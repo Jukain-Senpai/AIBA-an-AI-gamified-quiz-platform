@@ -1,0 +1,64 @@
+import { NavBar } from '../components/NavBar';
+import { Footer } from '../components/Footer';
+import { MagicInput } from '../components/MagicInput';
+import { MagicButton } from '../components/MagicButton';
+import { User } from 'lucide-react';
+
+export function RegisterPage() {
+return (
+<div className="flex flex-col h-full">
+  <NavBar />
+
+  <main className="flex-1 flex items-center justify-center px-6 py-8">
+    <div className="w-full max-w-md">
+      <div
+        className="bg-slate-800/40 border border-purple-500/30 rounded-xl p-8 shadow-[0_0_40px_rgba(139,92,246,0.2)]">
+        <div className="text-center mb-6">
+          <h2 className="text-2xl text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-400 mb-1">
+            Begin Your Journey
+          </h2>
+          <p className="text-purple-300/60 text-sm">Create your adventurer</p>
+        </div>
+
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm text-purple-300 mb-2">Username</label>
+            <MagicInput placeholder="Choose your name" />
+          </div>
+
+          <div>
+            <label className="block text-sm text-purple-300 mb-2">Email</label>
+            <MagicInput type="email" placeholder="wizard@mysticquest.com" />
+          </div>
+
+          <div>
+            <label className="block text-sm text-purple-300 mb-2">Password</label>
+            <MagicInput type="password" placeholder="••••••••" />
+          </div>
+
+          <div className="border border-purple-500/30 rounded-lg p-4 bg-slate-900/30">
+            <p className="text-xs text-purple-300 mb-2">Avatar Preview</p>
+            <div className="flex justify-center">
+              <div
+                className="w-20 h-20 bg-gradient-to-br from-purple-600 to-indigo-600 rounded-full flex items-center justify-center border-2 border-cyan-400/40 shadow-[0_0_20px_rgba(34,211,238,0.3)]">
+                <User className="w-10 h-10 text-cyan-200" />
+              </div>
+            </div>
+          </div>
+
+          <MagicButton variant="primary" className="w-full">
+            Create Account
+          </MagicButton>
+
+          <p className="text-center text-xs text-purple-400/60">
+            Already have an account? <a href="#" className="text-cyan-400 hover:underline">Login</a>
+          </p>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <Footer />
+</div>
+);
+}

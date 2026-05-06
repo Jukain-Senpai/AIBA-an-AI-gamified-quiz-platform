@@ -1,6 +1,34 @@
 <template>
   <div class="create-wrapper">
     
+    <!-- AI Generator Panel -->
+    <div class="ai-panel box">
+      <div class="ai-header" @click="isAiPanelOpen = !isAiPanelOpen">
+        <h2>✨ Generate with AI</h2>
+        <span class="toggle-icon">{{ isAiPanelOpen ? '▼' : '▶' }}</span>
+      </div>
+      
+      <div v-show="isAiPanelOpen" class="ai-content">
+        <p class="ai-description">Describe the quiz you want, and AI will create it for you!</p>
+        <textarea 
+          v-model="aiPrompt" 
+          placeholder="e.g., Create a 10-question quiz about the Solar System, medium difficulty..."
+          class="ai-textarea"
+        ></textarea>
+        
+        <button 
+          class="ai-generate-btn" 
+          @click="generateWithAI" 
+          :disabled="isGenerating || !aiPrompt.trim()"
+        >
+          <span v-if="isGenerating" class="spinner">↻</span>
+          {{ isGenerating ? 'Generating...' : 'Generate Quiz' }}
+        </button>
+        
+        <p v-if="aiError" class="ai-error">{{ aiError }}</p>
+      </div>
+    </div>
+
     <div class="box">
       <h2>Create Quiz</h2>
 
@@ -95,6 +123,10 @@ export default {
 
   data() {
     return {
+      isAiPanelOpen: true,
+      aiPrompt: "",
+      isGenerating: false,
+      aiError: "",
 
       letters:["A","B","C","D"],
 
@@ -117,6 +149,49 @@ export default {
   },
 
   methods:{
+    async generateWithAI() {
+      if (!this.aiPrompt.trim()) return;
+      
+      this.isGenerating = true;
+      this.aiError = "";
+      
+      try {
+        const token = localStorage.getItem("token");
+        const res = await fetch("http://localhost:5000/api/ai/generate-quiz", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`
+          },
+          body: JSON.stringify({ prompt: this.aiPrompt })
+        });
+        
+        const data = await res.json();
+        
+        if (!res.ok) {
+          throw new Error(data.message || "Failed to generate quiz");
+        }
+        
+        // Auto-fill the form
+        this.quiz.title = data.title || "";
+        this.quiz.description = data.description || "";
+        if (data.difficulty) this.quiz.difficulty = data.difficulty;
+        if (data.category) this.quiz.category = data.category;
+        
+        if (data.questions && data.questions.length > 0) {
+          this.questions = data.questions;
+        }
+        
+        this.isAiPanelOpen = false;
+        alert("Quiz generated successfully! Please review and edit before saving.");
+        
+      } catch (err) {
+        console.error(err);
+        this.aiError = err.message || "Something went wrong. Please try again.";
+      } finally {
+        this.isGenerating = false;
+      }
+    },
     selectCorrect(questionIndex, answerIndex){
       this.questions[questionIndex].correctIndex = answerIndex;
     },
@@ -197,6 +272,87 @@ export default {
   background: linear-gradient(135deg, #0f172a, #1e1b4b);
   min-height:100vh;
   color:#e9d5ff;
+}
+
+/* ===== AI PANEL ===== */
+.ai-panel {
+  border: 1px solid #00e5ff;
+  box-shadow: 0 0 15px rgba(0, 229, 255, 0.2);
+  background: linear-gradient(180deg, #1e1b4b, #15123d);
+}
+
+.ai-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+}
+
+.ai-header h2 {
+  color: #00e5ff;
+  margin: 0;
+}
+
+.ai-description {
+  color: #a78bfa;
+  margin-top: 10px;
+  margin-bottom: 15px;
+  font-size: 14px;
+}
+
+.ai-textarea {
+  min-height: 80px;
+  margin-bottom: 15px;
+  border-color: rgba(0, 229, 255, 0.4);
+}
+
+.ai-textarea:focus {
+  border-color: #00e5ff;
+  box-shadow: 0 0 0 2px rgba(0, 229, 255, 0.2);
+}
+
+.ai-generate-btn {
+  width: 100%;
+  padding: 14px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #00e5ff, #0284c7);
+  color: #000;
+  font-weight: bold;
+  font-size: 16px;
+  border: none;
+  cursor: pointer;
+  transition: 0.2s;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+}
+
+.ai-generate-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(0, 229, 255, 0.3);
+}
+
+.ai-generate-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+  filter: grayscale(100%);
+}
+
+.spinner {
+  animation: spin 1s linear infinite;
+  display: inline-block;
+}
+
+@keyframes spin {
+  100% { transform: rotate(360deg); }
+}
+
+.ai-error {
+  color: #ef4444;
+  margin-top: 10px;
+  font-size: 14px;
+  text-align: center;
 }
 
 /* ===== CARD / BOX ===== */

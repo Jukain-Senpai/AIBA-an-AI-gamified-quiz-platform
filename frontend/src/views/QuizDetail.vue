@@ -17,6 +17,10 @@
         v-for="option in currentQuestion.options"
         :key="option.id"
         class="answer-btn"
+        :class="{
+          'correct': answered && option.id === correctOptionId,
+          'incorrect': answered && option.id === selectedOptionId && option.id !== correctOptionId
+        }"
         @click="submitAnswer(option.id)"
         :disabled="answered"
         >
@@ -56,6 +60,8 @@ export default {
       quiz:null,
       currentIndex: 0,
       answered: false,
+      selectedOptionId: null,
+      correctOptionId: null,
       feedback: ""
     };
   },
@@ -107,11 +113,13 @@ export default {
 
         const data = await res.json();
 
-        this.answered= true;
+        this.selectedOptionId = optionId;
+        this.correctOptionId = data.correctOptionId;
+        this.answered = true;
 
         if (data.correct) {
           this.feedback = "✅ Correct!";
-        }else {
+        } else {
           this.feedback = "❌ Incorrect!";
         }
 
@@ -123,6 +131,8 @@ export default {
     nextQuestion() {
       this.currentIndex++;
       this.answered = false;
+      this.selectedOptionId = null;
+      this.correctOptionId = null;
       this.feedback = "";
     }
 
@@ -179,8 +189,24 @@ export default {
   transition: 0.2s;
 }
 
-.answer-btn:hover {
+.answer-btn:hover:not(:disabled) {
   background: rgba(139, 92, 246, 0.4);
+}
+
+.answer-btn.correct {
+  background: #10b981 !important;
+  color: white;
+  border: 1px solid #059669;
+}
+
+.answer-btn.incorrect {
+  background: #ef4444 !important;
+  color: white;
+  border: 1px solid #dc2626;
+}
+
+.answer-btn:disabled {
+  cursor: default;
 }
 
 .feedback {

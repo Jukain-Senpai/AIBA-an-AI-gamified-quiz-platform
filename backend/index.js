@@ -16,12 +16,14 @@ const authRoutes = require("./routes/auth.routes");
 const quizRoutes = require("./routes/quiz.routes");
 const answerOptionRoutes = require("./routes/answerOption.routes");
 const skillRoutes = require("./routes/skill.routes");
+const aiRoutes = require("./routes/ai.routes");
 
-app.use("/users", require("./routes/users.routes"));
+app.use("/api/users", require("./routes/users.routes"));
 app.use("/api/auth", authRoutes);
 app.use("/api/quizzes", quizRoutes);
 app.use("/api", answerOptionRoutes);
-app.use("/skills", skillRoutes)
+app.use("/skills", skillRoutes);
+app.use("/api/ai", aiRoutes);
 
 
 app.get("/", (req, res) => {
