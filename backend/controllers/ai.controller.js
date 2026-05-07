@@ -1,4 +1,4 @@
-const { GoogleGenerativeAI } = require("@google/generative-ai");
+const Groq = require("groq-sdk");
 
 const generateQuiz = async (req, res) => {
     try {
@@ -8,18 +8,16 @@ const generateQuiz = async (req, res) => {
             return res.status(400).json({ message: "Prompt is required" });
         }
 
-        const apiKey = process.env.GEMINI_API_KEY;
+        const apiKey = process.env.GROQ_API_KEY;
         if (!apiKey) {
             return res.status(500).json({ message: "AI features are not configured properly (missing API key)" });
         }
 
-        const genAI = new GoogleGenerativeAI(apiKey);
-        // We use gemini-2.0-flash as it's the standard for general, fast text tasks
-        const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+        const groq = new Groq({ apiKey });
 
         const systemInstruction = `
 You are a helpful quiz generator. Based on the user's prompt, generate a quiz.
-You MUST return ONLY valid JSON matching this exact structure, with no markdown formatting or backticks around it:
+You MUST return ONLY valid JSON matching this exact structure:
 {
   "title": "string",
   "description": "string",
@@ -33,16 +31,29 @@ You MUST return ONLY valid JSON matching this exact structure, with no markdown 
     }
   ]
 }
-Make sure each question has exactly 4 answers, and the correctIndex is correct.
+Make sure each question has exactly 4 answers, and the correctIndex is correct. Do NOT include markdown blocks.
         `;
 
-        const finalPrompt = `${systemInstruction}\n\nUser prompt: ${prompt}`;
+        const chatCompletion = await groq.chat.completions.create({
+            messages: [
+                {
+                    role: "system",
+                    content: systemInstruction
+                },
+                {
+                    role: "user",
+                    content: prompt
+                }
+            ],
+            model: "llama-3.1-8b-instant",
+            temperature: 0.7,
+            response_format: { type: "json_object" }
+        });
 
-        const result = await model.generateContent(finalPrompt);
-        const responseText = result.response.text();
+        const responseText = chatCompletion.choices[0]?.message?.content;
         
-        // Clean up potential markdown formatting from the response
         let cleanedJson = responseText.trim();
+        // Groq usually returns pure JSON when using json_object, but just in case:
         if (cleanedJson.startsWith('\`\`\`json')) {
             cleanedJson = cleanedJson.replace(/^\`\`\`json\n/, '').replace(/\n\`\`\`$/, '');
         } else if (cleanedJson.startsWith('\`\`\`')) {

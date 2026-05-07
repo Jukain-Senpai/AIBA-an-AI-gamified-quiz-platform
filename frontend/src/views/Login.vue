@@ -10,10 +10,10 @@
 
       <form @submit.prevent="handleLogin" class="auth-form">
         <div class="input-group">
-          <label>Email</label>
+          <label>Email or Username</label>
           <input 
-            type="email" 
-            placeholder="AIBA_1@gmail.com" 
+            type="text" 
+            placeholder="AIBA1@gmail.com or KnightScholar" 
             v-model="email" 
             required 
           />

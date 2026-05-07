@@ -39,8 +39,14 @@ const registerUser = async ({ email, password, username, avatar }) => {
 };
 
 const loginUser = async ({ email, password }) => {
-  const user = await prisma.user.findUnique({
-    where: { email },
+  // 'email' parameter can now be either an email or a username
+  const user = await prisma.user.findFirst({
+    where: {
+      OR: [
+        { email: email },
+        { username: email }
+      ]
+    },
   });
 
   if (!user) {
