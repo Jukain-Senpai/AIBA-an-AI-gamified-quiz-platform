@@ -1,5 +1,15 @@
 const prisma = require("../utils/prisma");
 
+const getAllSkills = async (req, res) => {
+    try {
+        const skills = await prisma.skill.findMany();
+        res.json(skills);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Failed to fetch skills" });
+    }
+};
+
 const unlockSkill = async (req, res) => {
     try {
         const userId = req.user.id;
@@ -21,6 +31,26 @@ const unlockSkill = async (req, res) => {
             return res.status(400).json({
                 message: `Requires level ${skill.requiredLevel}`
             });
+        }
+
+        if (user.skillPoints < skill.cost) {
+            return res.status(400).json({
+                message: `Not enough Skill Points. Requires ${skill.cost} SP.`
+            });
+        }
+
+        // Enforce prerequisites
+        if (skill.requiredLevel > 1) {
+            const userSkills = await prisma.userSkill.findMany({
+                where: { userId },
+                include: { skill: true }
+            });
+            const hasTier1 = userSkills.some(us => us.skill.path === skill.path && us.skill.requiredLevel === 1);
+            if (!hasTier1) {
+                return res.status(400).json({
+                    message: `You must unlock the Tier 1 skill in the ${skill.path} path first.`
+                });
+            }
         }
 
         const existing = await prisma.userSkill.findUnique({
@@ -63,4 +93,4 @@ const unlockSkill = async (req, res) => {
     }
 };
 
-module.exports = { unlockSkill };
+module.exports = { unlockSkill, getAllSkills };

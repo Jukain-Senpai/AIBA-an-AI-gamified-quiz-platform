@@ -5,7 +5,8 @@ const {
     createQuiz,
     getQuizById,
     getAllQuizzes,
-    checkAnswer
+    checkAnswer,
+    useSkill
  } = require("../controllers/quiz.controller");
 const protect = require("../middleware/auth.middleware");
 const questionRoutes = require("./question.routes");
@@ -77,6 +78,7 @@ router.get("/", protect, getAllQuizzes);
 router.get("/:quizId", protect, getQuizById);
 
 router.post("/check-answer", protect, checkAnswer);
+router.post("/use-skill/:questionId", protect, useSkill);
 /**
  * @swagger
  * /api/quizzes/check-answer:

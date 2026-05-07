@@ -9,6 +9,7 @@ import QuizDetail from "../views/QuizDetail.vue";
 import QuizResult from "../views/QuizResult.vue";
 import CreateQuiz from "../views/CreateQuiz.vue";
 import Profile from "../views/Profile.vue";
+import Skills from "../views/Skills.vue";
 
 const routes = [
     { path: "/", component: Landing },
@@ -21,6 +22,7 @@ const routes = [
     { path: "/result", component: QuizResult },
     { path: "/create-quiz", component: CreateQuiz },
     { path: "/profile", component: Profile },
+    { path: "/skills", component: Skills },
 ];
 
 const router = createRouter({

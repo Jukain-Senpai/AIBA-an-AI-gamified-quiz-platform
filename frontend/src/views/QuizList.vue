@@ -1,6 +1,9 @@
 <template>
   <div class="quiz-wrapper">
-    <h1 class="title">Available Quizzes</h1>
+    <div class="page-header">
+      <h1 class="title">Available Quizzes</h1>
+      <router-link to="/create-quiz" class="create-btn">Create Your Own Quiz</router-link>
+    </div>
 
     <div class="quiz-container">
       <div
@@ -60,11 +63,19 @@ export default {
           }
         });
 
+        if (res.status === 401) {
+          localStorage.removeItem("token");
+          this.$router.push("/login");
+          return;
+        }
+
+        if (!res.ok) {
+          throw new Error("Failed to fetch quizzes");
+        }
+
         const data = await res.json();
-
         console.log("Loaded quizzes:", data);
-
-        this.quizzes = data;
+        this.quizzes = Array.isArray(data) ? data : [];
       } catch (err) {
         console.error("Failed to load quizzes", err);
       }
@@ -84,10 +95,33 @@ export default {
   padding: 4rem 6rem;
 }
 
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+}
+
 .title {
   font-size: 2rem;
   color: #00e5ff;
-  margin-bottom: 2rem;
+  margin: 0;
+}
+
+.create-btn {
+  padding: 0.75rem 1.5rem;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #22d3ee, #0ea5e9);
+  color: white;
+  text-decoration: none;
+  font-weight: 600;
+  box-shadow: 0 4px 15px rgba(34, 211, 238, 0.3);
+  transition: 0.25s;
+}
+
+.create-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(34, 211, 238, 0.5);
 }
 
 /* QUIZ LIST */

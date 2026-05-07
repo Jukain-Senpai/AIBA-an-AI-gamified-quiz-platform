@@ -10,7 +10,7 @@
       <button @click="fetchProfile" class="btn btn-primary">Retry</button>
     </div>
 
-    <div v-else class="profile-content">
+    <div v-else-if="user" class="profile-content">
       <!-- Header Section -->
       <div class="profile-header-card">
         <div class="header-flex">

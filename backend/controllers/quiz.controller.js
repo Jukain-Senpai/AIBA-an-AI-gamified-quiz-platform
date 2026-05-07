@@ -149,9 +149,44 @@ const getAllQuizzes = async(req, res) => {
     }
 };
 
+const useSkill = async (req, res) => {
+    try {
+        const { questionId } = req.params;
+        const { skillName } = req.body;
+
+        const question = await prisma.question.findUnique({
+            where: { id: Number(questionId) },
+            include: { options: true }
+        });
+
+        if (!question) return res.status(404).json({ message: "Question not found" });
+
+        const correctOption = question.options.find(o => o.isCorrect);
+        const incorrectOptions = question.options.filter(o => !o.isCorrect);
+
+        let data = {};
+
+        if (skillName === "Battle Fury") {
+            const shuffled = incorrectOptions.sort(() => 0.5 - Math.random());
+            data.removedOptionIds = [shuffled[0].id, shuffled[1].id];
+        } else if (skillName === "Incantation") {
+            const shuffled = incorrectOptions.sort(() => 0.5 - Math.random());
+            data.removedOptionIds = [shuffled[0].id];
+        } else if (skillName === "Arcane Knowledge" || skillName === "Crowd Mentality") {
+            data.correctOptionId = correctOption.id;
+        }
+
+        res.status(200).json(data);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Failed to use skill" });
+    }
+};
+
 module.exports = {
     createQuiz,
     getQuizById,
     getAllQuizzes,
-    checkAnswer
+    checkAnswer,
+    useSkill
 };

@@ -1,7 +1,9 @@
 const express = require("express");
 const router = express.Router();
-const { unlockSkill } = require("../controllers/skill.controller");
+const { unlockSkill, getAllSkills } = require("../controllers/skill.controller");
 const authMiddleware = require("../middleware/auth.middleware");
+
+router.get("/", authMiddleware, getAllSkills);
 
 /**
  * @swagger

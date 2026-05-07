@@ -22,7 +22,7 @@ app.use("/api/users", require("./routes/users.routes"));
 app.use("/api/auth", authRoutes);
 app.use("/api/quizzes", quizRoutes);
 app.use("/api", answerOptionRoutes);
-app.use("/skills", skillRoutes);
+app.use("/api/skills", skillRoutes);
 app.use("/api/ai", aiRoutes);
 
 

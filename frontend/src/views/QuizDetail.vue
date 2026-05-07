@@ -18,11 +18,12 @@
         :key="option.id"
         class="answer-btn"
         :class="{
-          'correct': answered && option.id === correctOptionId,
-          'incorrect': answered && option.id === selectedOptionId && option.id !== correctOptionId
+          'correct': (answered && option.id === correctOptionId) || option.id === arcaneRevealedId,
+          'incorrect': answered && option.id === selectedOptionId && option.id !== correctOptionId,
+          'disabled-option': removedOptionIds.includes(option.id) || (shieldActive && shieldUsedOnId === option.id)
         }"
         @click="submitAnswer(option.id)"
-        :disabled="answered"
+        :disabled="answered || removedOptionIds.includes(option.id) || (shieldActive && shieldUsedOnId === option.id)"
         >
         {{ option.text }}
       </button>
@@ -48,6 +49,23 @@
     Finish Quiz
   </router-link>
     </div>
+
+    <!-- Active Skills / Lifelines -->
+    <div class="lifelines-container" v-if="userSkills.length > 0">
+      <h3 class="lifelines-title">Lifelines</h3>
+      <div class="skills-bar">
+        <button 
+          v-for="skill in userSkills" 
+          :key="skill"
+          class="lifeline-btn"
+          :class="{ 'used': usedSkills.includes(skill) }"
+          @click="activateSkill(skill)"
+          :disabled="usedSkills.includes(skill) || answered"
+        >
+          {{ getSkillIcon(skill) }} {{ skill }}
+        </button>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -62,7 +80,17 @@ export default {
       answered: false,
       selectedOptionId: null,
       correctOptionId: null,
-      feedback: ""
+      feedback: "",
+      
+      // Skills
+      userSkills: [],
+      usedSkills: [],
+      removedOptionIds: [],
+      shieldActive: false,
+      shieldUsedOnId: null, // Track which wrong answer they clicked
+      healingSongActive: false,
+      arcaneRevealedId: null,
+      score: 0 // Local score tracking
     };
   },
 
@@ -75,7 +103,10 @@ export default {
 
   async mounted() {
     const quizId = this.$route.params.id;
-    await this.fetchQuiz(quizId);
+    await Promise.all([
+      this.fetchQuiz(quizId),
+      this.fetchUserSkills()
+    ]);
   },
 
   methods: {
@@ -98,7 +129,71 @@ export default {
       }
     },
 
-    async submitAnswer(optionId) {
+    async fetchUserSkills() {
+      try {
+        const token = localStorage.getItem("token");
+        const res = await fetch("http://localhost:5000/api/users/me", {
+          headers: { "Authorization": `Bearer ${token}` }
+        });
+        const data = await res.json();
+        this.userSkills = data.unlockedSkills || [];
+      } catch (err) {
+        console.error("Failed to load skills", err);
+      }
+    },
+
+    getSkillIcon(skillName) {
+      const icons = {
+        "Shield Mastery": "🛡️",
+        "Battle Fury": "⚔️",
+        "Incantation": "📖",
+        "Arcane Knowledge": "🔮",
+        "Healing Song": "🎵",
+        "Crowd Mentality": "👥"
+      };
+      return icons[skillName] || "✨";
+    },
+
+    async activateSkill(skillName) {
+      if (this.usedSkills.includes(skillName) || this.answered) return;
+      this.usedSkills.push(skillName);
+
+      if (skillName === "Shield Mastery") {
+        this.shieldActive = true;
+        return;
+      }
+      if (skillName === "Healing Song") {
+        this.healingSongActive = true;
+        return;
+      }
+
+      try {
+        const token = localStorage.getItem("token");
+        const res = await fetch(`http://localhost:5000/api/quizzes/use-skill/${this.currentQuestion.id}`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`
+          },
+          body: JSON.stringify({ skillName })
+        });
+        const data = await res.json();
+
+        if (skillName === "Battle Fury" || skillName === "Incantation") {
+          this.removedOptionIds.push(...data.removedOptionIds);
+        } else if (skillName === "Arcane Knowledge") {
+          this.arcaneRevealedId = data.correctOptionId;
+        } else if (skillName === "Crowd Mentality") {
+          this.submitAnswer(data.correctOptionId, true);
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    },
+
+    async submitAnswer(optionId, isCrowdMentality = false) {
+      if (this.answered) return;
+
       try {
         const token = localStorage.getItem("token");
 
@@ -113,14 +208,32 @@ export default {
 
         const data = await res.json();
 
+        // Handle Shield Mastery logic
+        if (!data.correct && this.shieldActive && !this.shieldUsedOnId) {
+          this.shieldUsedOnId = optionId;
+          this.feedback = "🛡️ Shield Activated! Try again.";
+          return; // Do not mark as answered
+        }
+
         this.selectedOptionId = optionId;
         this.correctOptionId = data.correctOptionId;
         this.answered = true;
 
         if (data.correct) {
-          this.feedback = "✅ Correct!";
+          if (isCrowdMentality) {
+            this.feedback = "👥 Crowd Mentality! Skipped for half points.";
+            this.score += 5; // Half points
+          } else {
+            this.feedback = "✅ Correct!";
+            this.score += 10; // Full points
+          }
         } else {
-          this.feedback = "❌ Incorrect!";
+          if (this.healingSongActive) {
+            this.feedback = "🎵 Healing Song! Incorrect, but you still get points!";
+            this.score += 10;
+          } else {
+            this.feedback = "❌ Incorrect!";
+          }
         }
 
       } catch (error) {
@@ -134,6 +247,13 @@ export default {
       this.selectedOptionId = null;
       this.correctOptionId = null;
       this.feedback = "";
+      
+      // Reset single-question skill states
+      this.removedOptionIds = [];
+      this.shieldActive = false;
+      this.shieldUsedOnId = null;
+      this.healingSongActive = false;
+      this.arcaneRevealedId = null;
     }
 
   }
@@ -227,6 +347,62 @@ export default {
   border: none;
 
   cursor: pointer;
+}
+
+/* LIFELINES */
+.lifelines-container {
+  margin-top: 3rem;
+  background: rgba(30, 41, 59, 0.4);
+  border: 1px solid rgba(139, 92, 246, 0.2);
+  border-radius: 12px;
+  padding: 1.5rem;
+  text-align: center;
+}
+
+.lifelines-title {
+  color: #d8b4fe;
+  font-size: 1.1rem;
+  margin-bottom: 1rem;
+}
+
+.skills-bar {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.lifeline-btn {
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  border: 1px solid #60a5fa;
+  color: white;
+  padding: 0.6rem 1rem;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.lifeline-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+}
+
+.lifeline-btn.used {
+  background: rgba(71, 85, 105, 0.5);
+  border-color: #475569;
+  color: #94a3b8;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.disabled-option {
+  opacity: 0.3;
+  cursor: not-allowed !important;
+  background: transparent !important;
+  border: 1px dashed rgba(139, 92, 246, 0.3) !important;
 }
 
 </style>
