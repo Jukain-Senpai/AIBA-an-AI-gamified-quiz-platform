@@ -128,8 +128,8 @@ body, html {
   width: 100%;
   min-height: 100vh;
   font-family: 'Inter', 'Segoe UI', sans-serif;
-  background-color: #0d0221;
-  color: #ffffff;
+  background-color: #FFFDF7;
+  color: #1A1A2E;
   overflow-x: hidden;
 }
 
@@ -138,10 +138,7 @@ body, html {
   width: 100%;
   display: flex;
   flex-direction: column;
-  background: 
-    radial-gradient(ellipse at 80% 20%, rgba(88, 28, 135, 0.4) 0%, transparent 50%),
-    radial-gradient(ellipse at 20% 80%, rgba(59, 7, 100, 0.3) 0%, transparent 50%),
-    linear-gradient(180deg, #1a0a2e 0%, #0d0221 100%);
+  background-color: #FFFDF7;
 }
 
 /* Page Indicator Bar */
@@ -150,7 +147,7 @@ body, html {
   align-items: center;
   gap: 8px;
   padding: 6px 20px;
-  background: linear-gradient(90deg, #7c3aed 0%, #a855f7 50%, #ec4899 100%);
+  background: linear-gradient(90deg, #5B4FE8 0%, #a855f7 100%);
   font-size: 0.8rem;
   font-weight: 500;
 }
@@ -158,14 +155,15 @@ body, html {
 .indicator-dot {
   width: 8px;
   height: 8px;
-  background: #3b82f6;
+  background: #06D6A0;
   border-radius: 2px;
-  box-shadow: 0 0 6px rgba(59, 130, 246, 0.8);
+  box-shadow: 0 0 6px rgba(6, 214, 160, 0.8);
 }
 
 .indicator-text {
   color: #ffffff;
   letter-spacing: 0.3px;
+  font-family: 'Nunito Sans', sans-serif;
 }
 
 /* 2. Full-Width Navbar */
@@ -174,9 +172,9 @@ body, html {
   justify-content: space-between;
   align-items: center;
   padding: 1rem 3rem;
-  background: linear-gradient(180deg, #1e1040 0%, #150a28 100%);
-  border-bottom: 1px solid rgba(139, 92, 246, 0.2);
-  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.4);
+  background-color: #ffffff;
+  border-bottom: 1px solid #E2E0F0;
+  box-shadow: 0 2px 10px rgba(91, 79, 232, 0.05);
   position: sticky;
   top: 0;
   width: 100%;
@@ -190,29 +188,16 @@ body, html {
 }
 
 .logo-icon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.logo-icon {
   width: 28px;
   height: 28px;
-  filter: drop-shadow(0 0 8px rgba(0, 229, 255, 0.5));
-}
-
-.nav-icon {
-  width: 18px;
-  height: 18px;
-  opacity: 0.9;
 }
 
 .logo-text {
-  color: #00e5ff;
-  font-weight: 600;
-  font-size: 1.25rem;
+  color: #5B4FE8;
+  font-family: 'Nunito Sans', sans-serif;
+  font-weight: 800;
+  font-size: 1.5rem;
   letter-spacing: 0.5px;
-  text-shadow: 0 0 20px rgba(0, 229, 255, 0.3);
 }
 
 .nav-links {
@@ -225,9 +210,10 @@ body, html {
   align-items: center;
   gap: 8px;
   text-decoration: none;
-  color: #a78bfa;
-  font-size: 0.95rem;
-  font-weight: 500;
+  color: #6B6B8A;
+  font-family: 'Nunito Sans', sans-serif;
+  font-size: 1rem;
+  font-weight: 600;
   padding: 8px 12px;
   border-radius: 8px;
   transition: all 0.3s ease;
@@ -236,42 +222,42 @@ body, html {
 .nav-icon {
   width: 18px;
   height: 18px;
-  opacity: 0.9;
+  opacity: 0.7;
+  /* Approximating #6B6B8A from black using CSS filters */
+  filter: brightness(0) saturate(100%) invert(43%) sepia(21%) saturate(541%) hue-rotate(206deg) brightness(95%) contrast(92%); 
 }
 
 .nav-item:hover,
 .nav-item.router-link-active {
-  color: #ffffff;
-  background: rgba(139, 92, 246, 0.15);
+  color: #5B4FE8;
+  background: rgba(91, 79, 232, 0.1);
 }
 
 .nav-item:hover .nav-icon,
 .nav-item.router-link-active .nav-icon {
   opacity: 1;
+  /* Approximating #5B4FE8 from black using CSS filters */
+  filter: brightness(0) saturate(100%) invert(26%) sepia(77%) saturate(5304%) hue-rotate(242deg) brightness(92%) contrast(92%); 
 }
 
 .logout-link {
-  color: #ff4d4d; /* Brighter red */
+  color: #EF476F; 
 }
 
 .logout-link .nav-icon {
   opacity: 1;
-  filter: drop-shadow(0 0 5px rgba(255, 77, 77, 0.6));
+  /* Approximating #EF476F from black */
+  filter: brightness(0) saturate(100%) invert(39%) sepia(61%) saturate(1637%) hue-rotate(318deg) brightness(93%) contrast(105%); 
 }
 
 .logout-link:hover {
-  background: rgba(255, 77, 77, 0.15) !important;
-  color: #ff6666;
-}
-
-.logout-link:hover .nav-icon {
-  filter: drop-shadow(0 0 10px rgba(255, 77, 77, 0.9));
+  background: rgba(239, 71, 111, 0.1) !important;
+  color: #d83a5c;
 }
 
 /* 3. Center the Login card in the remaining space */
 .content {
   flex: 1;
-  padding: 2rem;
 }
 
 /* 4. Full-Width Footer */
@@ -280,14 +266,14 @@ body, html {
   justify-content: space-between;
   align-items: center;
   padding: 1.2rem 3rem;
-  font-size: 0.8rem;
-  color: #6b5b8a;
-  background: rgba(13, 2, 33, 0.98);
-  border-top: 1px solid rgba(139, 92, 246, 0.1);
+  font-size: 0.9rem;
+  color: #6B6B8A;
+  background-color: #F5F3FF;
+  border-top: 1px solid #E2E0F0;
 }
 
 .footer-left {
-  color: #6b5b8a;
+  color: #6B6B8A;
 }
 
 .footer-right {
@@ -296,13 +282,14 @@ body, html {
 }
 
 .footer-right a {
-  color: #6b5b8a;
+  color: #6B6B8A;
   text-decoration: none;
   transition: color 0.2s;
+  font-weight: 500;
 }
 
 .footer-right a:hover {
-  color: #a78bfa;
+  color: #5B4FE8;
 }
 
 /* Responsive: Shrink padding on smaller screens */
