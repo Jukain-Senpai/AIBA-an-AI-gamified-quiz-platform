@@ -45,10 +45,6 @@
             <img src="/src/assets/Profile.svg" class="nav-icon" />
             <span>Profile</span>
           </router-link>
-          <a href="#" @click.prevent="logout" class="nav-item logout-link">
-            <img src="/src/assets/Logout.svg" class="nav-icon" />
-            <span>Logout</span>
-          </a>
         </template>
 
         <!-- Logged Out Links -->

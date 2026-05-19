@@ -1,94 +1,122 @@
 <template>
-  <div class="profile-container">
-    <div v-if="loading" class="loading-state">
+  <div class="profile-wrapper">
+    <div v-if="loading" class="state-container">
       <div class="spinner"></div>
       <p>Loading Profile...</p>
     </div>
 
-    <div v-else-if="error" class="error-state">
-      <p>{{ error }}</p>
+    <div v-else-if="error" class="state-container">
+      <p class="error-msg">{{ error }}</p>
       <button @click="fetchProfile" class="btn btn-primary">Retry</button>
     </div>
 
-    <div v-else-if="user" class="profile-content">
-      <!-- Header Section -->
-      <div class="profile-header-card">
-        <div class="header-flex">
-          <!-- Avatar -->
-          <div class="avatar-wrapper">
-            <img :src="getAvatarUrl(user.avatar)" alt="Avatar" class="profile-avatar" />
+    <div v-else-if="user" class="profile-container">
+
+      <!-- Header Banner -->
+      <div class="profile-banner">
+        <div class="banner-top">
+          <div class="avatar-container">
+            <img :src="getAvatarUrl(user.avatar)" class="avatar-image" />
+            <button class="edit-avatar-btn" @click="isEditing = true">
+              <span class="material-symbols-outlined" style="font-size: 16px;">edit</span>
+            </button>
           </div>
-
-          <!-- Info & Stats -->
-          <div class="info-section">
-            <div class="info-top">
-              <h1 class="username-display">{{ user.username || user.email.split('@')[0] }}</h1>
-              <span class="level-badge">Level {{ user.level }}</span>
-            </div>
-            <p class="title-path">{{ user.title }} • {{ user.path }} Path</p>
-
-            <!-- XP Bar -->
-            <div class="xp-container">
-              <div class="xp-labels">
-                <span>Experience Points</span>
-                <span>{{ user.xp }} / {{ user.xpToNext }} XP</span>
-              </div>
-              <div class="xp-bar-bg">
-                <div class="xp-bar-fill" :style="{ width: `${(user.xp / user.xpToNext) * 100}%` }"></div>
-              </div>
-            </div>
-
-            <!-- Stats Grid -->
-            <div class="stats-grid">
-              <div class="stat-box">
-                <div class="stat-label">Accuracy</div>
-                <div class="stat-value">--%</div> <!-- We don't have accuracy tracked yet -->
-              </div>
-              <div class="stat-box">
-                <div class="stat-label">Quizzes Taken</div>
-                <div class="stat-value">{{ user.stats.quizzesCompleted }}</div>
-              </div>
-              <div class="stat-box">
-                <div class="stat-label">Streak</div>
-                <div class="stat-value">{{ user.stats.winStreak }}</div>
-              </div>
-              <div class="stat-box">
-                <div class="stat-label">Rank</div>
-                <div class="stat-value">#---</div>
-              </div>
-            </div>
-            
-            <button class="btn-edit" @click="isEditing = true">Edit Profile</button>
+          <h1>{{ user.username || user.email.split('@')[0] }}</h1>
+          <div class="title-badge">
+            <span class="material-symbols-outlined" style="font-size: 14px; vertical-align: text-bottom;">star</span>
+            Level {{ user.level }} • {{ user.title }}
+          </div>
+        </div>
+        <div class="banner-bottom">
+          <div class="xp-text">{{ user.xp }} / {{ user.xpToNext }} XP to Level {{ user.level + 1 }}</div>
+          <div class="xp-bar-bg">
+            <div class="xp-bar-fill" :style="{ width: `${user.xpToNext > 0 ? (user.xp / user.xpToNext) * 100 : 0}%` }"></div>
           </div>
         </div>
       </div>
 
-      <div class="bottom-grid">
-        <!-- Unlocked Skills Summary -->
-        <div class="skills-summary-card">
-          <h3 class="card-title">Unlocked Skills</h3>
-          <div v-if="user.unlockedSkills && user.unlockedSkills.length" class="skills-list">
-            <div v-for="skill in user.unlockedSkills" :key="skill" class="skill-pill">
-              {{ skill }}
+      <!-- Stats Row -->
+      <div class="stats-row">
+        <div class="stat-card">
+          <span class="stat-icon">🔥</span>
+          <h3>{{ user.stats.winStreak }} Day Streak</h3>
+          <p>Don't break the chain!</p>
+        </div>
+        <div class="stat-card">
+          <span class="stat-icon">🏆</span>
+          <h3>{{ user.stats.quizzesCompleted }} Quizzes</h3>
+          <p>Completed so far</p>
+        </div>
+        <div class="stat-card">
+          <span class="stat-icon">✅</span>
+          <h3>{{ user.stats.skillPoints || 0 }} SP</h3>
+          <p>Skill Points earned</p>
+        </div>
+      </div>
+
+      <!-- Main Layout -->
+      <div class="main-layout">
+        <div class="left-col">
+          <!-- Unlocked Skills -->
+          <div class="card">
+            <div class="card-header">
+              <h2>Unlocked Skills 🏅</h2>
+              <router-link to="/skills" class="see-all">Manage Skills</router-link>
+            </div>
+            <div class="skills-row">
+              <div v-for="skill in user.unlockedSkills" :key="skill" class="skill-circle">
+                <div class="skill-icon-bg">{{ skill.charAt(0).toUpperCase() }}</div>
+                <span>{{ skill }}</span>
+              </div>
+              <div v-if="!user.unlockedSkills || user.unlockedSkills.length === 0" class="empty-state">
+                No skills unlocked yet. Take quizzes to earn SP!
+              </div>
             </div>
           </div>
-          <p v-else class="empty-text">No skills unlocked yet. Take quizzes to earn SP!</p>
+
+          <!-- Recent Activity -->
+          <div class="card">
+            <h2 style="margin-bottom: 1.5rem;">Recent Activity</h2>
+            <div class="activity-list">
+              <div v-for="attempt in user.recentAttempts" :key="attempt.id" class="activity-item">
+                <div class="activity-icon">
+                  <span class="material-symbols-outlined">science</span>
+                </div>
+                <div class="activity-details">
+                  <h4>{{ attempt.quiz.title }}</h4>
+                  <p>{{ attempt.quiz.category || 'General' }} • {{ new Date(attempt.completedAt || attempt.startedAt).toLocaleDateString() }}</p>
+                </div>
+                <div class="activity-score">
+                  <span class="score-percent" :class="getScoreColorClass(attempt.score)">{{ attempt.score }}%</span>
+                  <span class="score-label" :class="getScoreColorClass(attempt.score)">{{ getScoreMessage(attempt.score) }}</span>
+                </div>
+              </div>
+              <p v-if="!user.recentAttempts || user.recentAttempts.length === 0" class="empty-state">
+                No recent activity.
+              </p>
+            </div>
+          </div>
         </div>
 
-        <!-- Recent Activity -->
-        <div class="activity-card">
-          <h3 class="card-title">Recent Activity</h3>
-          <div class="activity-list">
-            <div v-for="attempt in user.recentAttempts" :key="attempt.id" class="activity-item">
-              <span class="activity-name">Completed "{{ attempt.quiz.title }}"</span>
-              <span class="activity-score">Score: {{ attempt.score }}</span>
-            </div>
-            <p v-if="!user.recentAttempts || user.recentAttempts.length === 0" class="empty-text">
-              No recent activity.
-            </p>
+        <div class="right-col">
+          <!-- Settings / Menu -->
+          <div class="card settings-card">
+            <button class="settings-item" @click="isEditing = true; editTab = 'info'">
+              <span class="material-symbols-outlined">settings</span> Account Settings
+            </button>
+            <button class="settings-item">
+              <span class="material-symbols-outlined">notifications</span> Notifications
+            </button>
+            <button class="settings-item">
+              <span class="material-symbols-outlined">help</span> Help Center
+            </button>
+            <button class="settings-item log-out" @click="logout">
+              <span class="material-symbols-outlined">logout</span> Log Out
+            </button>
           </div>
         </div>
       </div>
+
     </div>
 
     <!-- Edit Profile Modal -->
@@ -180,6 +208,20 @@ export default {
       if (!filename) return '/src/assets/NeonKnight_M.jpg';
       return `/src/assets/${filename}`;
     },
+    getScoreColorClass(score) {
+      if (score >= 90) return 'text-excellent';
+      if (score >= 70) return 'text-good';
+      return 'text-needs-work';
+    },
+    getScoreMessage(score) {
+      if (score >= 90) return 'Excellent!';
+      if (score >= 70) return 'Good job!';
+      return 'Keep trying!';
+    },
+    logout() {
+      localStorage.removeItem("token");
+      this.$router.push("/login");
+    },
     async fetchProfile() {
       this.loading = true;
       this.error = null;
@@ -191,7 +233,6 @@ export default {
         this.editForm.avatar = this.user.avatar || 'NeonKnight_M.jpg';
       } catch (err) {
         if (err.response?.status === 401) {
-          // Token is invalid or expired
           localStorage.removeItem("token");
           this.$router.push("/login");
         } else {
@@ -206,7 +247,6 @@ export default {
       this.saving = true;
       this.editError = null;
       try {
-        // Only send password if it's not empty
         const payload = {
           username: this.editForm.username,
           email: this.editForm.email,
@@ -218,13 +258,12 @@ export default {
 
         await api.put('/users/me', payload);
         
-        // Refresh local user data
         this.user.username = this.editForm.username;
         this.user.email = this.editForm.email;
         this.user.avatar = this.editForm.avatar;
         
         this.isEditing = false;
-        this.editForm.password = ''; // clear password field
+        this.editForm.password = ''; 
       } catch (err) {
         this.editError = err.response?.data?.error || "Failed to update profile";
       } finally {
@@ -239,219 +278,391 @@ export default {
 </script>
 
 <style scoped>
-.profile-container {
-  max-width: 900px;
-  margin: 0 auto;
-  color: #fff;
-  padding-bottom: 2rem;
+@import url('https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@600;700;800;900&family=Inter:wght@400;500;600&family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&display=swap');
+
+.profile-wrapper {
+  background-color: #f5f2ff;
+  min-height: calc(100vh - 80px);
+  padding: 2rem 1.5rem;
+  font-family: 'Inter', sans-serif;
+  color: #1a1a2e;
 }
 
-.profile-content {
+.state-container {
+  text-align: center;
+  padding: 4rem;
+}
+
+.spinner {
+  border: 4px solid rgba(66, 49, 207, 0.1);
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border-left-color: #4231cf;
+  animation: spin 1s linear infinite;
+  margin: 0 auto 1rem;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.profile-container {
+  max-width: 1000px;
+  margin: 0 auto;
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
-}
-
-/* Header Card */
-.profile-header-card {
-  background: rgba(30, 41, 59, 0.4);
-  border: 1px solid rgba(168, 85, 247, 0.3);
-  border-radius: 12px;
-  padding: 1.5rem;
-}
-
-.header-flex {
-  display: flex;
   gap: 2rem;
-  align-items: flex-start;
 }
 
-.avatar-wrapper {
+/* Banner */
+.profile-banner {
+  background: white;
+  border-radius: 24px;
+  overflow: hidden;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.04);
+}
+
+.banner-top {
+  background: linear-gradient(135deg, #5b4fe8, #4231cf);
+  padding: 3rem 2rem 2rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  color: white;
+  position: relative;
+}
+
+.avatar-container {
+  position: relative;
   width: 120px;
   height: 120px;
-  border-radius: 50%;
-  padding: 4px;
-  background: linear-gradient(135deg, #9333ea, #4f46e5);
-  border: 3px solid rgba(251, 191, 36, 0.6);
-  box-shadow: 0 0 20px rgba(251, 191, 36, 0.3);
-  flex-shrink: 0;
-  overflow: hidden;
+  margin-bottom: 1rem;
 }
 
-.profile-avatar {
+.avatar-image {
   width: 100%;
   height: 100%;
   border-radius: 50%;
+  border: 4px solid white;
   object-fit: cover;
+  background-color: white;
 }
 
-.info-section {
-  flex: 1;
-}
-
-.info-top {
+.edit-avatar-btn {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  background: white;
+  border: none;
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
   display: flex;
   align-items: center;
-  gap: 1rem;
-  margin-bottom: 0.5rem;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+  color: #4231cf;
+  transition: transform 0.2s;
 }
 
-.username-display {
-  margin: 0;
-  font-size: 1.75rem;
-  color: #e9d5ff;
+.edit-avatar-btn:hover {
+  transform: scale(1.1);
 }
 
-.level-badge {
-  background: rgba(245, 158, 11, 0.2);
-  border: 1px solid rgba(251, 191, 36, 0.4);
-  color: #fcd34d;
-  padding: 0.25rem 0.75rem;
+.banner-top h1 {
+  margin: 0 0 0.75rem 0;
+  font-family: 'Nunito Sans', sans-serif;
+  font-size: 28px;
+  font-weight: 800;
+}
+
+.title-badge {
+  background: #ffb702;
+  color: #6b4b00;
+  padding: 6px 16px;
   border-radius: 9999px;
-  font-size: 0.875rem;
-  font-weight: 600;
+  font-weight: 700;
+  font-size: 14px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
 }
 
-.title-path {
-  color: rgba(216, 180, 254, 0.6);
-  font-size: 0.9rem;
-  margin: 0 0 1rem 0;
-}
-
-.xp-container {
-  margin-bottom: 1.5rem;
-}
-
-.xp-labels {
+.banner-bottom {
+  padding: 1.5rem 2rem;
   display: flex;
-  justify-content: space-between;
-  font-size: 0.75rem;
-  color: #d8b4fe;
-  margin-bottom: 0.25rem;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.xp-text {
+  font-size: 14px;
+  font-weight: 600;
+  color: #464555;
 }
 
 .xp-bar-bg {
-  height: 8px;
-  background: rgba(15, 23, 42, 0.5);
+  width: 100%;
+  max-width: 400px;
+  height: 12px;
+  background: #efecff;
   border-radius: 9999px;
   overflow: hidden;
-  border: 1px solid rgba(168, 85, 247, 0.2);
 }
 
 .xp-bar-fill {
   height: 100%;
-  background: linear-gradient(90deg, #22d3ee, #a855f7);
+  background: #ffb702;
+  border-radius: 9999px;
   transition: width 0.5s ease;
 }
 
-/* Stats Grid */
-.stats-grid {
+/* Stats Row */
+.stats-row {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 1rem;
-  margin-bottom: 1rem;
-}
-
-.stat-box {
-  background: rgba(15, 23, 42, 0.3);
-  border: 1px solid rgba(168, 85, 247, 0.2);
-  border-radius: 8px;
-  padding: 0.75rem;
-  text-align: center;
-}
-
-.stat-label {
-  font-size: 0.75rem;
-  color: rgba(216, 180, 254, 0.6);
-  margin-bottom: 0.25rem;
-}
-
-.stat-value {
-  font-size: 1.1rem;
-  color: #e9d5ff;
-  font-weight: 600;
-}
-
-.btn-edit {
-  background: transparent;
-  border: 1px solid #a855f7;
-  color: #e9d5ff;
-  padding: 0.5rem 1rem;
-  border-radius: 6px;
-  cursor: pointer;
-  transition: all 0.2s;
-  font-size: 0.85rem;
-}
-
-.btn-edit:hover {
-  background: rgba(168, 85, 247, 0.2);
-}
-
-/* Bottom Grid */
-.bottom-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(3, 1fr);
   gap: 1.5rem;
 }
 
-.skills-summary-card, .activity-card {
-  background: rgba(30, 41, 59, 0.4);
-  border: 1px solid rgba(168, 85, 247, 0.3);
-  border-radius: 12px;
-  padding: 1.25rem;
+.stat-card {
+  background: white;
+  border-radius: 16px;
+  padding: 1.5rem;
+  text-align: center;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.04);
 }
 
-.card-title {
-  margin: 0 0 1rem 0;
-  font-size: 0.95rem;
-  color: #d8b4fe;
+.stat-icon {
+  font-size: 32px;
+  display: block;
+  margin-bottom: 0.5rem;
 }
 
-.skills-list {
+.stat-card h3 {
+  margin: 0 0 0.25rem 0;
+  font-family: 'Nunito Sans', sans-serif;
+  font-size: 20px;
+  font-weight: 700;
+  color: #1a1a2e;
+}
+
+.stat-card p {
+  margin: 0;
+  font-size: 13px;
+  color: #777586;
+}
+
+/* Main Layout */
+.main-layout {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 1.5rem;
+}
+
+@media (max-width: 768px) {
+  .main-layout {
+    grid-template-columns: 1fr;
+  }
+  .stats-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+.card {
+  background: white;
+  border-radius: 16px;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.04);
+}
+
+.card-header {
   display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.card h2 {
+  margin: 0;
+  font-family: 'Nunito Sans', sans-serif;
+  font-size: 20px;
+  font-weight: 700;
+  color: #1a1a2e;
+}
+
+.see-all {
+  color: #4231cf;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 14px;
+}
+.see-all:hover {
+  text-decoration: underline;
+}
+
+/* Skills Row */
+.skills-row {
+  display: flex;
+  gap: 1.5rem;
   flex-wrap: wrap;
+}
+
+.skill-circle {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   gap: 0.5rem;
+  width: 70px;
 }
 
-.skill-pill {
-  background: rgba(168, 85, 247, 0.2);
-  border: 1px solid rgba(168, 85, 247, 0.4);
-  color: #e9d5ff;
-  padding: 0.3rem 0.8rem;
-  border-radius: 9999px;
-  font-size: 0.8rem;
+.skill-icon-bg {
+  width: 60px;
+  height: 60px;
+  background: #f5f2ff;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #4231cf;
+  font-family: 'Nunito Sans', sans-serif;
+  font-size: 24px;
+  font-weight: 800;
 }
 
+.skill-circle span {
+  font-size: 12px;
+  color: #464555;
+  text-align: center;
+  font-weight: 500;
+  line-height: 1.2;
+}
+
+/* Recent Activity */
 .activity-list {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 1rem;
 }
 
 .activity-item {
   display: flex;
-  justify-content: space-between;
-  padding-bottom: 0.5rem;
-  border-bottom: 1px solid rgba(168, 85, 247, 0.2);
-  font-size: 0.85rem;
-  color: rgba(216, 180, 254, 0.8);
+  align-items: center;
+  background: #fcf8ff;
+  padding: 1rem;
+  border-radius: 12px;
+  gap: 1rem;
 }
 
-.activity-item:last-child {
-  border-bottom: none;
+.activity-icon {
+  width: 48px;
+  height: 48px;
+  background: #e8e5ff;
+  color: #4231cf;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
 }
 
-.empty-text {
-  color: rgba(216, 180, 254, 0.5);
-  font-size: 0.85rem;
+.activity-details {
+  flex: 1;
+}
+
+.activity-details h4 {
+  margin: 0 0 0.25rem 0;
+  font-family: 'Nunito Sans', sans-serif;
+  font-size: 16px;
+  font-weight: 700;
+  color: #1a1a2e;
+}
+
+.activity-details p {
+  margin: 0;
+  font-size: 12px;
+  color: #777586;
+}
+
+.activity-score {
+  text-align: right;
+  display: flex;
+  flex-direction: column;
+}
+
+.score-percent {
+  font-family: 'Nunito Sans', sans-serif;
+  font-size: 20px;
+  font-weight: 800;
+}
+.score-label {
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.text-excellent { color: #007657; }
+.text-good { color: #7d5800; }
+.text-needs-work { color: #ba1a1a; }
+
+/* Settings Menu */
+.settings-card {
+  display: flex;
+  flex-direction: column;
+  padding: 1rem;
+}
+
+.settings-item {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+  background: none;
+  border: none;
+  width: 100%;
+  text-align: left;
+  font-size: 15px;
+  font-weight: 600;
+  color: #1a1a2e;
+  cursor: pointer;
+  border-radius: 8px;
+  transition: background 0.2s;
+  font-family: 'Inter', sans-serif;
+}
+
+.settings-item:hover {
+  background: #f5f2ff;
+}
+
+.settings-item .material-symbols-outlined {
+  color: #777586;
+}
+
+.settings-item.log-out {
+  color: #ba1a1a;
+}
+.settings-item.log-out .material-symbols-outlined {
+  color: #ba1a1a;
+}
+.settings-item.log-out:hover {
+  background: #ffdad6;
+}
+
+.empty-state {
+  color: #777586;
+  font-size: 14px;
   font-style: italic;
+  padding: 1rem 0;
 }
 
-/* Modal Styles */
+/* Modal Styles - Updated for Light Mode */
 .modal-overlay {
   position: fixed;
   top: 0; left: 0; right: 0; bottom: 0;
-  background: rgba(0,0,0,0.7);
+  background: rgba(0,0,0,0.5);
   display: flex;
   justify-content: center;
   align-items: center;
@@ -460,40 +671,44 @@ export default {
 }
 
 .modal-content {
-  background: #1e1b4b;
-  border: 1px solid #8b5cf6;
-  border-radius: 12px;
+  background: #ffffff;
+  border-radius: 24px;
   padding: 2rem;
   width: 90%;
   max-width: 450px;
-  box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+  box-shadow: 0 10px 40px rgba(0,0,0,0.1);
 }
 
 .modal-title {
   margin: 0 0 1.5rem 0;
-  color: #fff;
+  color: #1a1a2e;
   text-align: center;
+  font-family: 'Nunito Sans', sans-serif;
+  font-weight: 800;
+  font-size: 24px;
 }
 
 .tabs {
   display: flex;
   gap: 1rem;
   margin-bottom: 1.5rem;
-  border-bottom: 1px solid rgba(139, 92, 246, 0.3);
+  border-bottom: 1px solid #e2e0fc;
 }
 
 .tabs button {
   background: none;
   border: none;
-  color: #a78bfa;
+  color: #777586;
   padding: 0.5rem 1rem;
   cursor: pointer;
   border-bottom: 2px solid transparent;
+  font-weight: 600;
+  font-family: 'Inter', sans-serif;
 }
 
 .tabs button.active {
-  color: #fff;
-  border-bottom-color: #a855f7;
+  color: #4231cf;
+  border-bottom-color: #4231cf;
 }
 
 .form-group {
@@ -503,17 +718,23 @@ export default {
 .form-group label {
   display: block;
   font-size: 0.85rem;
-  color: #a78bfa;
+  color: #464555;
   margin-bottom: 0.4rem;
+  font-weight: 500;
 }
 
 .form-group input {
   width: 100%;
   padding: 0.75rem;
-  background: rgba(15, 23, 42, 0.6);
-  border: 1px solid rgba(139, 92, 246, 0.3);
-  border-radius: 6px;
-  color: #fff;
+  background: #fcf8ff;
+  border: 1px solid #c8c4d8;
+  border-radius: 8px;
+  color: #1a1a2e;
+  font-family: 'Inter', sans-serif;
+}
+.form-group input:focus {
+  outline: none;
+  border-color: #5b4fe8;
 }
 
 .avatar-grid {
@@ -523,9 +744,9 @@ export default {
 }
 
 .avatar-option {
-  border-radius: 8px;
+  border-radius: 12px;
   overflow: hidden;
-  border: 2px solid transparent;
+  border: 3px solid transparent;
   cursor: pointer;
   transition: all 0.2s;
 }
@@ -542,8 +763,8 @@ export default {
 }
 
 .avatar-option.selected {
-  border-color: #22d3ee;
-  box-shadow: 0 0 15px rgba(34, 211, 238, 0.5);
+  border-color: #4231cf;
+  box-shadow: 0 0 15px rgba(66, 49, 207, 0.2);
 }
 
 .modal-actions {
@@ -559,41 +780,45 @@ export default {
 
 .btn-cancel {
   background: transparent;
-  border: 1px solid rgba(255,255,255,0.2);
-  color: #fff;
-  padding: 0.5rem 1rem;
-  border-radius: 6px;
+  border: 1px solid #c8c4d8;
+  color: #464555;
+  padding: 0.5rem 1.25rem;
+  border-radius: 9999px;
   cursor: pointer;
+  font-weight: 600;
+  transition: background 0.2s;
+}
+.btn-cancel:hover {
+  background: #f5f2ff;
 }
 
 .btn-save {
-  background: #7c3aed;
+  background: #ffb702;
   border: none;
-  color: #fff;
-  padding: 0.5rem 1rem;
-  border-radius: 6px;
+  color: #6b4b00;
+  padding: 0.5rem 1.25rem;
+  border-radius: 9999px;
   cursor: pointer;
+  font-weight: 700;
+  transition: transform 0.2s;
+}
+.btn-save:active {
+  transform: scale(0.95);
+}
+.btn-primary {
+  background: #4231cf;
+  color: white;
+  padding: 0.5rem 1.5rem;
+  border-radius: 9999px;
+  border: none;
+  cursor: pointer;
+  font-weight: 600;
 }
 
 .error-msg {
-  color: #ef4444;
+  color: #ba1a1a;
   font-size: 0.85rem;
   margin-top: 1rem;
   text-align: center;
-}
-
-.loading-state, .error-state {
-  text-align: center;
-  padding: 3rem;
-}
-
-.btn-primary {
-  background: #7c3aed;
-  border: none;
-  color: #fff;
-  padding: 0.5rem 1.5rem;
-  border-radius: 6px;
-  cursor: pointer;
-  margin-top: 1rem;
 }
 </style>

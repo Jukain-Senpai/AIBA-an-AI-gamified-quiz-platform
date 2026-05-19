@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@400;600;700;800&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-primary-container": "#e8e4ff",
+                        "on-primary-fixed-variant": "#3824c7",
+                        "on-secondary-fixed-variant": "#5e4100",
+                        "tertiary": "#005b42",
+                        "inverse-primary": "#c4c0ff",
+                        "surface-container-lowest": "#ffffff",
+                        "primary-container": "#5b4fe8",
+                        "on-background": "#1a1a2e",
+                        "inverse-on-surface": "#f2efff",
+                        "surface-variant": "#e2e0fc",
+                        "background": "#fcf8ff",
+                        "surface-dim": "#dad7f3",
+                        "on-secondary-container": "#6b4b00",
+                        "secondary-container": "#ffb702",
+                        "surface": "#fcf8ff",
+                        "on-error-container": "#93000a",
+                        "secondary-fixed": "#ffdea9",
+                        "on-error": "#ffffff",
+                        "surface-container-high": "#e8e5ff",
+                        "tertiary-container": "#007657",
+                        "outline": "#777586",
+                        "on-tertiary-fixed-variant": "#00513b",
+                        "error-container": "#ffdad6",
+                        "secondary": "#7d5800",
+                        "primary-fixed-dim": "#c4c0ff",
+                        "on-primary-fixed": "#120068",
+                        "on-tertiary-fixed": "#002116",
+                        "outline-variant": "#c8c4d8",
+                        "surface-bright": "#fcf8ff",
+                        "on-primary": "#ffffff",
+                        "surface-tint": "#5244de",
+                        "surface-container-low": "#f5f2ff",
+                        "secondary-fixed-dim": "#ffba27",
+                        "on-secondary": "#ffffff",
+                        "primary": "#4231cf",
+                        "tertiary-fixed-dim": "#27e0a9",
+                        "tertiary-fixed": "#54fdc4",
+                        "primary-fixed": "#e3dfff",
+                        "on-surface": "#1a1a2e",
+                        "on-surface-variant": "#464555",
+                        "surface-container": "#efecff",
+                        "surface-container-highest": "#e2e0fc",
+                        "on-secondary-fixed": "#271900",
+                        "error": "#ba1a1a",
+                        "on-tertiary-container": "#77ffcc",
+                        "on-tertiary": "#ffffff",
+                        "inverse-surface": "#2f2e43"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "2xl": "1rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "stack-lg": "24px",
+                        "container-padding-mobile": "24px",
+                        "stack-sm": "8px",
+                        "stack-md": "16px",
+                        "unit": "8px",
+                        "gutter": "16px",
+                        "container-padding-desktop": "40px"
+                    },
+                    "fontFamily": {
+                        "headline-lg": ["Nunito Sans"],
+                        "headline-md": ["Nunito Sans"],
+                        "display-hero": ["Nunito Sans"],
+                        "body-lg": ["Inter"],
+                        "caption": ["Inter"],
+                        "label-md": ["Nunito Sans"],
+                        "headline-lg-mobile": ["Nunito Sans"],
+                        "body-md": ["Inter"]
+                    },
+                    "fontSize": {
+                        "headline-lg": ["32px", {"lineHeight": "1.3", "fontWeight": "800"}],
+                        "headline-md": ["24px", {"lineHeight": "1.4", "fontWeight": "700"}],
+                        "display-hero": ["48px", {"lineHeight": "1.2", "letterSpacing": "-0.02em", "fontWeight": "800"}],
+                        "body-lg": ["18px", {"lineHeight": "1.6", "fontWeight": "400"}],
+                        "caption": ["12px", {"lineHeight": "1.2", "fontWeight": "500"}],
+                        "label-md": ["16px", {"lineHeight": "1.2", "fontWeight": "600"}],
+                        "headline-lg-mobile": ["28px", {"lineHeight": "1.3", "fontWeight": "800"}],
+                        "body-md": ["16px", {"lineHeight": "1.6", "fontWeight": "400"}]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body { background-color: #FFFDF7; font-family: 'Inter', sans-serif; }
+        .card-shadow { box-shadow: 0 4px 20px rgba(91, 79, 232, 0.08); }
+        .hover-card:hover { transform: translateY(-2px); transition: all 0.2s ease; }
+        .custom-scrollbar::-webkit-scrollbar { height: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #e2e0fc; border-radius: 10px; }
+        .bouncy-button:active { transform: translateY(2px); }
+    </style>
+</head>
+<body class="text-on-background">
+<!-- TopNavBar -->
+<header class="bg-surface/80 dark:bg-surface-dim/80 backdrop-blur-md border-b border-outline-variant/30 dark:border-outline/30 shadow-sm shadow-primary/10 sticky top-0 z-50">
+<nav class="flex justify-between items-center w-full px-6 md:px-10 max-w-7xl mx-auto h-16 md:h-20">
+<div class="flex items-center gap-2">
+<span class="text-headline-md font-headline-md font-extrabold text-primary dark:text-primary-fixed-dim">AIBA</span>
+</div>
+<div class="hidden md:flex items-center gap-8">
+<a class="text-on-surface-variant dark:text-surface-variant font-label-md hover:text-primary dark:hover:text-primary-fixed-dim transition-colors duration-200" href="#">Features</a>
+<a class="text-on-surface-variant dark:text-surface-variant font-label-md hover:text-primary dark:hover:text-primary-fixed-dim transition-colors duration-200" href="#">How it Works</a>
+<a class="text-on-surface-variant dark:text-surface-variant font-label-md hover:text-primary dark:hover:text-primary-fixed-dim transition-colors duration-200" href="#">Pricing</a>
+<a class="text-primary dark:text-primary-fixed-dim border-b-2 border-primary font-bold pb-1" href="#">Community</a>
+</div>
+<div class="flex items-center gap-4">
+<button class="hidden sm:block text-on-surface-variant font-label-md hover:text-primary transition-colors">Login</button>
+<button class="bg-primary text-on-primary px-6 py-2 rounded-full font-label-md shadow-lg shadow-primary/20 hover:scale-105 active:scale-95 transition-all">Get Started</button>
+</div>
+</nav>
+</header>
+<main class="max-w-7xl mx-auto px-6 md:px-10 py-8 space-y-8">
+<!-- Header Section -->
+<div class="flex flex-col md:flex-row md:items-end justify-between gap-6">
+<div class="space-y-2">
+<h1 class="text-headline-lg-mobile md:text-headline-lg font-headline-lg text-primary">Community Hub 🌐</h1>
+<p class="text-body-lg text-on-surface-variant font-body-lg max-w-2xl">Ask questions, share knowledge, and challenge your friends in our vibrant learning ecosystem!</p>
+</div>
+<button class="bg-secondary-container text-on-secondary-fixed-variant px-8 py-3 rounded-full font-label-md text-label-md flex items-center gap-2 shadow-lg shadow-secondary/10 bouncy-button hover:bg-secondary-fixed transition-colors">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">add_circle</span>
+                New Post
+            </button>
+</div>
+<!-- Stats Bar -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+<div class="bg-white border border-outline-variant/30 rounded-2xl p-6 flex items-center gap-4 card-shadow">
+<div class="p-3 rounded-xl bg-primary-container/10 text-primary">
+<span class="material-symbols-outlined text-3xl">post_add</span>
+</div>
+<div>
+<div class="text-headline-md font-headline-md text-primary">1,240</div>
+<div class="text-caption font-caption text-on-surface-variant">Posts This Week</div>
+</div>
+</div>
+<div class="bg-white border border-outline-variant/30 rounded-2xl p-6 flex items-center gap-4 card-shadow">
+<div class="p-3 rounded-xl bg-tertiary-container/10 text-tertiary">
+<span class="material-symbols-outlined text-3xl">groups</span>
+</div>
+<div>
+<div class="text-headline-md font-headline-md text-tertiary">8,500</div>
+<div class="text-caption font-caption text-on-surface-variant">Active Members</div>
+</div>
+</div>
+<div class="bg-white border border-outline-variant/30 rounded-2xl p-6 flex items-center gap-4 card-shadow">
+<div class="p-3 rounded-xl bg-error-container/20 text-error">
+<span class="material-symbols-outlined text-3xl">local_fire_department</span>
+</div>
+<div>
+<div class="text-headline-md font-headline-md text-error">52</div>
+<div class="text-caption font-caption text-on-surface-variant">Hot Discussions</div>
+</div>
+</div>
+</div>
+<!-- Category Tabs -->
+<div class="flex items-center gap-3 overflow-x-auto pb-4 custom-scrollbar whitespace-nowrap">
+<button class="px-6 py-2 rounded-full bg-primary text-on-primary font-label-md text-label-md shadow-md shadow-primary/20">All</button>
+<button class="px-6 py-2 rounded-full bg-white border border-outline-variant/30 text-on-surface-variant font-label-md text-label-md hover:bg-surface-container transition-colors">💬 General</button>
+<button class="px-6 py-2 rounded-full bg-white border border-outline-variant/30 text-on-surface-variant font-label-md text-label-md hover:bg-surface-container transition-colors">🧠 Quiz Help</button>
+<button class="px-6 py-2 rounded-full bg-white border border-outline-variant/30 text-on-surface-variant font-label-md text-label-md hover:bg-surface-container transition-colors">🏆 Challenges</button>
+<button class="px-6 py-2 rounded-full bg-white border border-outline-variant/30 text-on-surface-variant font-label-md text-label-md hover:bg-surface-container transition-colors">💡 Tips &amp; Tricks</button>
+<button class="px-6 py-2 rounded-full bg-white border border-outline-variant/30 text-on-surface-variant font-label-md text-label-md hover:bg-surface-container transition-colors">📢 Announcements</button>
+</div>
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-stack-lg">
+<!-- Main Content Area -->
+<div class="lg:col-span-8 space-y-stack-lg">
+<!-- Pinned Post -->
+<div class="relative overflow-hidden rounded-2xl border-2 border-primary-container/20 card-shadow bg-white p-6 hover-card">
+<div class="absolute top-0 left-0 w-2 h-full bg-gradient-to-b from-secondary-container to-primary-container"></div>
+<div class="flex items-start justify-between mb-4">
+<div class="flex items-center gap-2">
+<span class="bg-secondary-container/20 text-on-secondary-fixed-variant px-3 py-1 rounded-full text-caption font-caption flex items-center gap-1">
+<span class="material-symbols-outlined text-sm" style="font-variation-settings: 'FILL' 1;">push_pin</span>
+                                Pinned
+                            </span>
+<span class="text-primary font-label-md text-label-md">📢 Announcements</span>
+</div>
+<div class="flex items-center gap-3 text-on-surface-variant opacity-60">
+<div class="flex items-center gap-1"><span class="material-symbols-outlined text-sm">visibility</span> <span class="text-caption">2.4k</span></div>
+<div class="flex items-center gap-1"><span class="material-symbols-outlined text-sm">chat_bubble</span> <span class="text-caption">128</span></div>
+</div>
+</div>
+<h3 class="text-headline-md font-headline-md mb-2">The Annual Global Quiz Championship Starts Next Week!</h3>
+<p class="text-body-md text-on-surface-variant font-body-md line-clamp-2">Get your study groups ready! We're hosting the biggest quiz event of the year with exclusive reward badges and premium subscriptions for the winners. Are you ready to climb the leaderboard?</p>
+<div class="mt-4 flex items-center gap-2">
+<img class="w-8 h-8 rounded-full border border-primary/20" data-alt="A friendly profile headshot of a smiling community manager with soft studio lighting, wearing a smart casual outfit, set against a clean pastel background that reflects the AIBA educational branding style." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAjgm2QBRvrovG_OnT3XvdGyCzDqhQgkn8ma2kSXonO3DgrDFjpSivhjvYbbkHzQBhSaMqCa47ZJiSaTQrTBCc7zi8uPv4QIHI2RHGgJbsFZimVbQxpkwZvMobJECGKKbHGcVIZe3CKqmYwANt1pfQSmVw8iNt1IxyAVodrICYsOF1EmrebfuwtLO1BcRHVSdCuessYiUXnf6OIUY12Yn07gSu_V28Of8SLNxv0APXxukfXHtouYXU3HadQF7H_U-aqHpS4GD3dZ3Ml"/>
+<span class="text-label-md font-label-md text-primary">Team AIBA</span>
+<span class="text-caption font-caption text-on-surface-variant">• 2 hours ago</span>
+</div>
+</div>
+<!-- Post List -->
+<div class="space-y-4">
+<!-- Post Card 1 -->
+<div class="flex bg-white border border-outline-variant/30 rounded-2xl card-shadow overflow-hidden hover-card group">
+<div class="w-16 bg-surface-container flex flex-col items-center py-4 gap-1 border-r border-outline-variant/20">
+<button class="text-on-surface-variant hover:text-primary transition-colors"><span class="material-symbols-outlined">expand_less</span></button>
+<span class="font-headline-md text-primary">42</span>
+<button class="text-on-surface-variant hover:text-error transition-colors"><span class="material-symbols-outlined">expand_more</span></button>
+</div>
+<div class="flex-1 p-6 flex flex-col md:flex-row gap-6">
+<div class="flex-1 space-y-2">
+<span class="px-2 py-0.5 rounded-lg bg-tertiary-container/10 text-tertiary text-caption font-caption">🧠 Quiz Help</span>
+<h4 class="text-headline-md font-headline-md group-hover:text-primary transition-colors">Struggling with the Quantum Physics Level 4 quiz...</h4>
+<p class="text-body-md text-on-surface-variant font-body-md line-clamp-2">Does anyone have tips for the time-dilation questions? I keep mixing up the formulas. Any visuals or shortcuts would be amazing!</p>
+<div class="flex items-center gap-2 pt-2">
+<div class="w-6 h-6 rounded-full bg-surface-container-highest flex items-center justify-center">
+<span class="material-symbols-outlined text-sm">person</span>
+</div>
+<span class="text-label-md font-label-md text-on-surface">Alex Chen</span>
+<span class="bg-primary/10 text-primary px-2 py-0.5 rounded text-[10px] font-bold">LEVEL 9</span>
+<span class="text-caption font-caption text-on-surface-variant">• 45m ago</span>
+</div>
+</div>
+<div class="flex md:flex-col items-center md:justify-center md:border-l border-outline-variant/20 md:pl-6 gap-4 text-on-surface-variant">
+<div class="text-center">
+<div class="text-headline-md font-headline-md">12</div>
+<div class="text-caption font-caption">Replies</div>
+</div>
+<div class="text-center opacity-60">
+<div class="text-label-md font-label-md">850</div>
+<div class="text-caption font-caption">Views</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Post Card 2 -->
+<div class="flex bg-white border border-outline-variant/30 rounded-2xl card-shadow overflow-hidden hover-card group">
+<div class="w-16 bg-surface-container flex flex-col items-center py-4 gap-1 border-r border-outline-variant/20">
+<button class="text-on-surface-variant hover:text-primary transition-colors"><span class="material-symbols-outlined">expand_less</span></button>
+<span class="font-headline-md text-primary">156</span>
+<button class="text-on-surface-variant hover:text-error transition-colors"><span class="material-symbols-outlined">expand_more</span></button>
+</div>
+<div class="flex-1 p-6 flex flex-col md:flex-row gap-6">
+<div class="flex-1 space-y-2">
+<span class="px-2 py-0.5 rounded-lg bg-secondary-container/10 text-secondary text-caption font-caption">💡 Tips &amp; Tricks</span>
+<h4 class="text-headline-md font-headline-md group-hover:text-primary transition-colors">How I mastered World History in 30 days 🌏</h4>
+<p class="text-body-md text-on-surface-variant font-body-md line-clamp-2">I developed a mnemonic system specifically for the AIBA history modules. Sharing my Google Doc with all the triggers and memory palaces I used.</p>
+<div class="flex items-center gap-2 pt-2">
+<img class="w-6 h-6 rounded-full border border-outline-variant" data-alt="A portrait of a young enthusiastic student in a brightly lit library setting. The image should feature warm, inviting tones and a focused but playful learning atmosphere, consistent with a high-end cartoon-modern aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCYCyoeRubJq7gfUZ6HwuXwxjAtg-U9c66D2Z8TZPyXkvgY2tV_a6FSsL1u7bePNMg8nUZHNr0mAYGPryLJD89E2pXNa5w3__FYKtkOxlhRFU4t4bc473V9Fu9wyDVlEgdmjsnVFrU1vBC4Fz52QLbf8g5azNt_ClsXfriaqHTGr3HeU5M3AXo83nFX-Yj_MWDR9_13B0oze6f5LwhT_ReNRF0NYy0kXpWJmkui9ImTo6JkE5y6RD7WVLpHOJ5btypDz0tMU67JNtjy"/>
+<span class="text-label-md font-label-md text-on-surface">Sarah Jenkins</span>
+<span class="bg-secondary text-on-secondary px-2 py-0.5 rounded text-[10px] font-bold">LEVEL 24</span>
+<span class="text-caption font-caption text-on-surface-variant">• 3h ago</span>
+</div>
+</div>
+<div class="flex md:flex-col items-center md:justify-center md:border-l border-outline-variant/20 md:pl-6 gap-4 text-on-surface-variant">
+<div class="text-center">
+<div class="text-headline-md font-headline-md">34</div>
+<div class="text-caption font-caption">Replies</div>
+</div>
+<div class="text-center opacity-60">
+<div class="text-label-md font-label-md">2.1k</div>
+<div class="text-caption font-caption">Views</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Load More Button -->
+<button class="w-full py-4 rounded-2xl border-2 border-dashed border-outline-variant hover:border-primary hover:text-primary transition-all font-label-md text-label-md text-on-surface-variant flex items-center justify-center gap-2">
+<span class="material-symbols-outlined">expand_more</span>
+                    Load More Discussions
+                </button>
+</div>
+<!-- Sidebar -->
+<aside class="lg:col-span-4 space-y-stack-lg">
+<!-- Trending Topics -->
+<div class="bg-white border border-outline-variant/30 rounded-2xl p-6 card-shadow">
+<h3 class="text-headline-md font-headline-md mb-4 flex items-center gap-2">
+<span class="material-symbols-outlined text-primary">trending_up</span>
+                        Trending Topics
+                    </h3>
+<div class="flex flex-wrap gap-2">
+<a class="px-3 py-1.5 rounded-lg bg-surface-container hover:bg-primary-container/20 hover:text-primary transition-colors text-caption font-caption text-on-surface-variant" href="#">#WorldHistory</a>
+<a class="px-3 py-1.5 rounded-lg bg-surface-container hover:bg-primary-container/20 hover:text-primary transition-colors text-caption font-caption text-on-surface-variant" href="#">#MathTips</a>
+<a class="px-3 py-1.5 rounded-lg bg-surface-container hover:bg-primary-container/20 hover:text-primary transition-colors text-caption font-caption text-on-surface-variant" href="#">#ChemistryLab</a>
+<a class="px-3 py-1.5 rounded-lg bg-surface-container hover:bg-primary-container/20 hover:text-primary transition-colors text-caption font-caption text-on-surface-variant" href="#">#SpeedQuiz</a>
+<a class="px-3 py-1.5 rounded-lg bg-surface-container hover:bg-primary-container/20 hover:text-primary transition-colors text-caption font-caption text-on-surface-variant" href="#">#GeographyMaster</a>
+<a class="px-3 py-1.5 rounded-lg bg-surface-container hover:bg-primary-container/20 hover:text-primary transition-colors text-caption font-caption text-on-surface-variant" href="#">#DailyChallenge</a>
+</div>
+</div>
+<!-- Top Helpers -->
+<div class="bg-white border border-outline-variant/30 rounded-2xl p-6 card-shadow">
+<h3 class="text-headline-md font-headline-md mb-4 flex items-center gap-2">
+<span class="material-symbols-outlined text-secondary">workspace_premium</span>
+                        Top Helpers
+                    </h3>
+<div class="space-y-4">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-3">
+<span class="text-label-md font-label-md text-on-surface-variant w-4">1</span>
+<img class="w-10 h-10 rounded-full border border-secondary" data-alt="A portrait of an intellectual and friendly tutor-like character, with glasses and a warm smile, set against a background of books and vibrant educational icons in a modern 2D cartoon style." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDxgFc7_0T6rLJajUhh7YrHTQ3AYF6D2Cseo5Petpoyjo7tcKX9Y9AaJGIDsie21IICiNr2obv_VfTmV9YZUcoKTK-5NkV-7WzPTQLOwTT-tA332bOW0XCKzkOMKuZr9nFIc-MlGKWp75hSsrFQYUEhylf6YfLS4Gpmc21HOpCj3nDX8YojdHyoYljESee_Ljfi-fx1Kyuql2vxK5s2b7cf-hgi4a73q7HE7ukyRlGKIAW_IUlFvvH_Q1_dTiol9ih7sI1LPiqnRfX8"/>
+<div>
+<div class="text-label-md font-label-md">Prof. Quizzer</div>
+<div class="text-caption font-caption text-on-surface-variant">2.4k Points</div>
+</div>
+</div>
+<span class="material-symbols-outlined text-secondary" style="font-variation-settings: 'FILL' 1;">stars</span>
+</div>
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-3">
+<span class="text-label-md font-label-md text-on-surface-variant w-4">2</span>
+<div class="w-10 h-10 rounded-full bg-tertiary-container/20 flex items-center justify-center text-tertiary font-bold">M</div>
+<div>
+<div class="text-label-md font-label-md">MindMap_Pro</div>
+<div class="text-caption font-caption text-on-surface-variant">1.8k Points</div>
+</div>
+</div>
+</div>
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-3">
+<span class="text-label-md font-label-md text-on-surface-variant w-4">3</span>
+<div class="w-10 h-10 rounded-full bg-primary-container/20 flex items-center justify-center text-primary font-bold">S</div>
+<div>
+<div class="text-label-md font-label-md">StudyBee</div>
+<div class="text-caption font-caption text-on-surface-variant">1.5k Points</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Quick Links -->
+<div class="bg-white border border-outline-variant/30 rounded-2xl p-6 card-shadow">
+<h3 class="text-headline-md font-headline-md mb-4 flex items-center gap-2">
+<span class="material-symbols-outlined">link</span>
+                        Quick Links
+                    </h3>
+<ul class="space-y-2">
+<li><a class="text-body-md text-on-surface-variant hover:text-primary transition-colors flex items-center gap-2" href="#"><span class="material-symbols-outlined text-sm">chevron_right</span> Community Guidelines</a></li>
+<li><a class="text-body-md text-on-surface-variant hover:text-primary transition-colors flex items-center gap-2" href="#"><span class="material-symbols-outlined text-sm">chevron_right</span> Reward Shop</a></li>
+<li><a class="text-body-md text-on-surface-variant hover:text-primary transition-colors flex items-center gap-2" href="#"><span class="material-symbols-outlined text-sm">chevron_right</span> Report an Issue</a></li>
+<li><a class="text-body-md text-on-surface-variant hover:text-primary transition-colors flex items-center gap-2" href="#"><span class="material-symbols-outlined text-sm">chevron_right</span> Become a Moderator</a></li>
+</ul>
+</div>
+</aside>
+</div>
+</main>
+<!-- Footer -->
+<footer class="bg-surface-container-low dark:bg-surface-container-lowest border-t border-outline-variant/20 mt-12">
+<div class="flex flex-col md:flex-row justify-between items-center py-10 px-6 md:px-10 max-w-7xl mx-auto gap-stack-md">
+<div class="flex flex-col items-center md:items-start gap-2">
+<span class="font-headline-md text-headline-md text-primary dark:text-primary-fixed-dim">AIBA</span>
+<p class="font-caption text-caption text-on-surface-variant">© 2024 AIBA Learning. All rights reserved.</p>
+</div>
+<div class="flex gap-6">
+<a class="text-on-surface-variant dark:text-surface-variant hover:text-primary hover:underline transition-all font-body-md text-body-md" href="#">Privacy Policy</a>
+<a class="text-on-surface-variant dark:text-surface-variant hover:text-primary hover:underline transition-all font-body-md text-body-md" href="#">Terms of Service</a>
+<a class="text-on-surface-variant dark:text-surface-variant hover:text-primary hover:underline transition-all font-body-md text-body-md" href="#">Help Center</a>
+<a class="text-on-surface-variant dark:text-surface-variant hover:text-primary hover:underline transition-all font-body-md text-body-md" href="#">Contact Us</a>
+</div>
+</div>
+</footer>
+<script>
+        // Micro-interactions
+        document.querySelectorAll('.hover-card').forEach(card => {
+            card.addEventListener('mouseenter', () => {
+                card.style.transform = 'translateY(-4px)';
+            });
+            card.addEventListener('mouseleave', () => {
+                card.style.transform = 'translateY(0)';
+            });
+        });
+    </script>
+</body></html>

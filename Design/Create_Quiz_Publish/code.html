@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@400;600;700;800;900&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "inverse-surface": "#2f2e43",
+                        "surface-tint": "#5244de",
+                        "inverse-on-surface": "#f2efff",
+                        "surface-container-lowest": "#ffffff",
+                        "error-container": "#ffdad6",
+                        "surface-variant": "#e2e0fc",
+                        "primary-fixed-dim": "#c4c0ff",
+                        "primary-container": "#5b4fe8",
+                        "on-error": "#ffffff",
+                        "on-secondary-fixed": "#271900",
+                        "on-primary-fixed": "#120068",
+                        "primary-fixed": "#e3dfff",
+                        "error": "#ba1a1a",
+                        "tertiary-fixed-dim": "#27e0a9",
+                        "secondary-fixed-dim": "#ffba27",
+                        "on-tertiary": "#ffffff",
+                        "on-secondary": "#ffffff",
+                        "inverse-primary": "#c4c0ff",
+                        "background": "#fcf8ff",
+                        "on-secondary-fixed-variant": "#5e4100",
+                        "on-primary-container": "#e8e4ff",
+                        "surface-container": "#efecff",
+                        "surface-container-highest": "#e2e0fc",
+                        "tertiary": "#005b42",
+                        "secondary": "#7d5800",
+                        "on-primary": "#ffffff",
+                        "surface": "#fcf8ff",
+                        "secondary-fixed": "#ffdea9",
+                        "on-tertiary-fixed": "#002116",
+                        "on-secondary-container": "#6b4b00",
+                        "on-error-container": "#93000a",
+                        "on-tertiary-container": "#77ffcc",
+                        "on-surface": "#1a1a2e",
+                        "on-primary-fixed-variant": "#3824c7",
+                        "on-background": "#1a1a2e",
+                        "secondary-container": "#ffb702",
+                        "surface-dim": "#dad7f3",
+                        "primary": "#4231cf",
+                        "outline": "#777586",
+                        "surface-container-high": "#e8e5ff",
+                        "on-tertiary-fixed-variant": "#00513b",
+                        "tertiary-container": "#007657",
+                        "surface-container-low": "#f5f2ff",
+                        "tertiary-fixed": "#54fdc4",
+                        "surface-bright": "#fcf8ff",
+                        "outline-variant": "#c8c4d8",
+                        "on-surface-variant": "#464555"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "stack-lg": "24px",
+                        "gutter": "16px",
+                        "stack-sm": "8px",
+                        "stack-md": "16px",
+                        "container-padding-mobile": "24px",
+                        "unit": "8px",
+                        "container-padding-desktop": "40px"
+                    },
+                    "fontFamily": {
+                        "headline-lg": ["Nunito Sans"],
+                        "display-hero": ["Nunito Sans"],
+                        "headline-md": ["Nunito Sans"],
+                        "caption": ["Inter"],
+                        "body-md": ["Inter"],
+                        "headline-lg-mobile": ["Nunito Sans"],
+                        "label-md": ["Nunito Sans"],
+                        "body-lg": ["Inter"]
+                    },
+                    "fontSize": {
+                        "headline-lg": ["32px", { "lineHeight": "1.3", "fontWeight": "800" }],
+                        "display-hero": ["48px", { "lineHeight": "1.2", "letterSpacing": "-0.02em", "fontWeight": "800" }],
+                        "headline-md": ["24px", { "lineHeight": "1.4", "fontWeight": "700" }],
+                        "caption": ["12px", { "lineHeight": "1.2", "fontWeight": "500" }],
+                        "body-md": ["16px", { "lineHeight": "1.6", "fontWeight": "400" }],
+                        "headline-lg-mobile": ["28px", { "lineHeight": "1.3", "fontWeight": "800" }],
+                        "label-md": ["16px", { "lineHeight": "1.2", "fontWeight": "600" }],
+                        "body-lg": ["18px", { "lineHeight": "1.6", "fontWeight": "400" }]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .bouncy-hover:hover {
+            transform: translateY(-4px);
+            transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        .bouncy-click:active {
+            transform: translateY(2px);
+        }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(12px);
+            border: 1px solid #E2E0F0;
+            box-shadow: 0 4px 20px rgba(91, 79, 232, 0.08);
+        }
+        .indigo-shadow {
+            box-shadow: 0 10px 25px -5px rgba(91, 79, 232, 0.1), 0 8px 10px -6px rgba(91, 79, 232, 0.1);
+        }
+    </style>
+</head>
+<body class="bg-background text-on-surface font-body-md selection:bg-primary-fixed selection:text-on-primary-fixed">
+<!-- TopNavBar -->
+<nav class="fixed top-0 w-full z-50 bg-surface/90 backdrop-blur-md border-b border-outline-variant/30 shadow-sm h-20">
+<div class="flex justify-between items-center w-full px-container-padding-mobile md:px-container-padding-desktop max-w-7xl mx-auto h-full">
+<div class="text-headline-md font-headline-md font-extrabold text-primary tracking-tight">AIBA</div>
+<div class="hidden md:flex items-center gap-gutter">
+<a class="text-on-surface-variant font-medium hover:text-primary transition-colors font-label-md text-label-md" href="#">Features</a>
+<a class="text-on-surface-variant font-medium hover:text-primary transition-colors font-label-md text-label-md" href="#">How it Works</a>
+<a class="text-on-surface-variant font-medium hover:text-primary transition-colors font-label-md text-label-md" href="#">Pricing</a>
+<a class="text-on-surface-variant font-medium hover:text-primary transition-colors font-label-md text-label-md" href="#">Community</a>
+</div>
+<div class="flex items-center gap-stack-md">
+<button class="px-6 py-2 text-on-surface-variant font-label-md text-label-md hover:bg-surface-container-high rounded-full transition-all active:scale-95">Log In</button>
+<button class="px-6 py-2.5 bg-primary text-on-primary font-label-md text-label-md rounded-full shadow-lg shadow-primary/20 hover:bg-on-primary-fixed-variant transition-all active:scale-95">Join Free</button>
+</div>
+</div>
+</nav>
+<main class="pt-32 pb-40 px-container-padding-mobile md:px-container-padding-desktop max-w-5xl mx-auto">
+<!-- Progress Wizard -->
+<div class="flex items-center justify-center mb-12 gap-gutter">
+<!-- Step 1 -->
+<div class="flex flex-col items-center gap-stack-sm">
+<div class="w-10 h-10 rounded-full flex items-center justify-center bg-surface-container-highest text-on-surface-variant font-bold border-2 border-outline-variant">
+<span class="material-symbols-outlined text-sm" style="font-variation-settings: 'wght' 700;">check</span>
+</div>
+<span class="font-label-md text-label-md text-on-surface-variant">Setup</span>
+</div>
+<div class="w-16 h-1 bg-outline-variant rounded-full mb-6 opacity-30"></div>
+<!-- Step 2 -->
+<div class="flex flex-col items-center gap-stack-sm">
+<div class="w-10 h-10 rounded-full flex items-center justify-center bg-surface-container-highest text-on-surface-variant font-bold border-2 border-outline-variant">
+<span class="material-symbols-outlined text-sm" style="font-variation-settings: 'wght' 700;">check</span>
+</div>
+<span class="font-label-md text-label-md text-on-surface-variant">Questions</span>
+</div>
+<div class="w-16 h-1 bg-primary rounded-full mb-6"></div>
+<!-- Step 3 -->
+<div class="flex flex-col items-center gap-stack-sm">
+<div class="w-12 h-12 rounded-full flex items-center justify-center bg-primary text-on-primary font-bold shadow-lg shadow-primary/30 ring-4 ring-primary-container/20">
+                    3
+                </div>
+<span class="font-label-md text-label-md text-primary font-bold">Review</span>
+</div>
+</div>
+<!-- Review Content -->
+<div class="space-y-stack-lg">
+<!-- Summary Card -->
+<section class="glass-card rounded-xl p-8 md:p-12 relative overflow-hidden indigo-shadow">
+<!-- Decorative background elements -->
+<div class="absolute -top-12 -right-12 w-48 h-48 bg-secondary-container opacity-20 rounded-full blur-3xl"></div>
+<div class="absolute -bottom-12 -left-12 w-48 h-48 bg-primary opacity-10 rounded-full blur-3xl"></div>
+<div class="relative z-10 flex flex-col md:flex-row gap-8 items-start md:items-center">
+<div class="w-32 h-32 md:w-40 md:h-40 rounded-xl bg-surface-container-high flex items-center justify-center shrink-0 border-2 border-dashed border-outline-variant/50">
+<img alt="Quiz Icon" class="w-20 h-20" data-alt="A stylized, vibrant 3D rocket icon with smooth plastic textures and soft rounded edges. The rocket is purple and white, floating in a cloud-like soft background with golden star particles around it, maintaining a playful and high-energy educational aesthetic with soft primary-tinted lighting." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDDIj5kvlOcMi_s4TEaBU3N2gKqf01FsJFcMgTBi2CWqhZEebX8YFwywSutPf1_4LPulTINs_93-Qp7cYtAceWai2DghYzrnxeqyengifcKF6EHNKOqtcgIl3ZYmJ0diE4dp5QLMnDwl_05A3N1MqQ5kzVwBw1zBaor1lJukfo2SZKghxl1T4Ur6t7sxg5c1rBEj0UdYlmhOeXYRTKT0fbxz6pm5D_remk98lkBQMIv47v-bFvp-ZYB3GJ8Hq4MuuQehE7OO9o_si9C"/>
+</div>
+<div class="flex-grow space-y-stack-sm">
+<div class="flex flex-wrap gap-stack-sm mb-2">
+<span class="px-3 py-1 bg-primary-container text-on-primary-container rounded-full font-label-md text-label-md">Astrophysics</span>
+<span class="px-3 py-1 bg-surface-container-highest text-on-surface-variant rounded-full font-label-md text-label-md flex items-center gap-1">
+<span class="material-symbols-outlined text-sm">schedule</span>
+                                15 Mins
+                            </span>
+</div>
+<h1 class="font-headline-lg text-headline-lg text-on-surface">The Mysteries of Black Holes</h1>
+<p class="text-on-surface-variant font-body-lg max-w-2xl">A deep dive into event horizons, singularity, and the fundamental laws of spacetime. Perfect for intermediate explorers.</p>
+<div class="flex items-center gap-stack-lg mt-6 pt-6 border-t border-outline-variant/30">
+<div>
+<p class="text-caption text-on-surface-variant uppercase tracking-wider mb-1">Difficulty</p>
+<div class="flex text-secondary-container">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">star</span>
+</div>
+</div>
+<div>
+<p class="text-caption text-on-surface-variant uppercase tracking-wider mb-1">Total Questions</p>
+<p class="font-headline-md text-headline-md text-primary">24</p>
+</div>
+<div>
+<p class="text-caption text-on-surface-variant uppercase tracking-wider mb-1">Reward Points</p>
+<p class="font-headline-md text-headline-md text-tertiary">450 XP</p>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Preview Section -->
+<section class="space-y-stack-md">
+<div class="flex items-center justify-between">
+<h2 class="font-headline-md text-headline-md flex items-center gap-2">
+<span class="material-symbols-outlined text-primary">visibility</span>
+                        Look inside
+                    </h2>
+<button class="text-primary font-label-md text-label-md hover:underline decoration-2 underline-offset-4">Edit Questions</button>
+</div>
+<!-- First Question Card Preview -->
+<div class="bg-surface rounded-xl border-2 border-outline-variant/20 p-8 indigo-shadow relative">
+<div class="absolute top-0 right-0 px-4 py-2 bg-primary-container text-on-primary-container rounded-bl-xl font-label-md text-label-md">Question 1/24</div>
+<div class="max-w-3xl mx-auto space-y-stack-lg">
+<h3 class="font-headline-md text-headline-md text-center mt-4">What happens to an object as it passes the Event Horizon?</h3>
+<!-- Progress bar mock -->
+<div class="w-full bg-surface-container-highest h-3 rounded-full overflow-hidden">
+<div class="bg-primary h-full w-[4%]" style="box-shadow: inset 0 2px 4px rgba(255,255,255,0.3)"></div>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-stack-md">
+<!-- Selected Option -->
+<div class="p-6 bg-surface-container-low border-2 border-primary rounded-xl flex items-center gap-gutter bouncy-hover cursor-pointer group">
+<div class="w-10 h-10 rounded-lg bg-primary flex items-center justify-center text-on-primary font-bold">A</div>
+<p class="font-label-md text-label-md flex-grow">It is stretched into a long strand (Spaghettification)</p>
+<span class="material-symbols-outlined text-primary" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+</div>
+<div class="p-6 bg-surface-container-low border border-outline-variant/30 rounded-xl flex items-center gap-gutter bouncy-hover cursor-pointer hover:border-primary-container transition-colors">
+<div class="w-10 h-10 rounded-lg bg-surface-container-highest flex items-center justify-center text-on-surface-variant font-bold">B</div>
+<p class="font-label-md text-label-md">It is immediately vaporized by friction</p>
+</div>
+<div class="p-6 bg-surface-container-low border border-outline-variant/30 rounded-xl flex items-center gap-gutter bouncy-hover cursor-pointer hover:border-primary-container transition-colors">
+<div class="w-10 h-10 rounded-lg bg-surface-container-highest flex items-center justify-center text-on-surface-variant font-bold">C</div>
+<p class="font-label-md text-label-md">It enters a parallel universe instantly</p>
+</div>
+<div class="p-6 bg-surface-container-low border border-outline-variant/30 rounded-xl flex items-center gap-gutter bouncy-hover cursor-pointer hover:border-primary-container transition-colors">
+<div class="w-10 h-10 rounded-lg bg-surface-container-highest flex items-center justify-center text-on-surface-variant font-bold">D</div>
+<p class="font-label-md text-label-md">Nothing, it passes through safely</p>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Microcopy -->
+<div class="text-center py-10">
+<p class="font-headline-md text-headline-md text-on-surface-variant mb-2">Ready to launch your quest?</p>
+<p class="text-body-md text-on-surface-variant">Your students are waiting for this cosmic adventure.</p>
+</div>
+</div>
+</main>
+<!-- Footer Controls -->
+<footer class="fixed bottom-0 w-full bg-surface-container-low border-t border-outline-variant/30 py-6 z-50">
+<div class="max-w-7xl mx-auto px-container-padding-mobile md:px-container-padding-desktop flex flex-col md:flex-row justify-between items-center gap-gutter">
+<div>
+<button class="flex items-center gap-2 text-on-surface-variant font-label-md text-label-md hover:text-primary transition-colors group">
+<span class="material-symbols-outlined group-hover:-translate-x-1 transition-transform">arrow_back</span>
+                    Back to Questions
+                </button>
+</div>
+<div class="flex items-center gap-stack-lg">
+<button class="px-8 py-3 text-on-surface-variant font-label-md text-label-md hover:bg-surface-container-high rounded-full transition-all active:scale-95">
+                    Save Draft
+                </button>
+<button class="px-10 py-4 bg-secondary-container text-on-secondary-container font-headline-md text-headline-md rounded-full shadow-lg shadow-secondary-container/20 hover:scale-105 active:scale-95 transition-all flex items-center gap-2 border-b-4 border-on-secondary-container/20" id="publishBtn">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">rocket_launch</span>
+                    Publish Quiz
+                </button>
+</div>
+</div>
+</footer>
+<!-- Global Footer -->
+<footer class="bg-surface-container-low border-t border-outline-variant mt-20">
+<div class="grid grid-cols-1 md:grid-cols-2 gap-stack-lg w-full px-container-padding-mobile md:px-container-padding-desktop py-12 max-w-7xl mx-auto">
+<div class="space-y-stack-md">
+<div class="font-headline-md text-headline-md font-black text-on-surface">AIBA</div>
+<p class="text-body-md text-on-surface-variant max-w-xs">© 2024 AIBA. Gamifying the future of learning. Making education accessible and fun for everyone.</p>
+</div>
+<div class="flex flex-wrap gap-x-gutter gap-y-stack-sm md:justify-end items-center">
+<a class="text-on-surface-variant font-label-md text-label-md hover:text-primary transition-colors" href="#">Privacy Policy</a>
+<a class="text-on-surface-variant font-label-md text-label-md hover:text-primary transition-colors" href="#">Terms of Service</a>
+<a class="text-on-surface-variant font-label-md text-label-md hover:text-primary transition-colors" href="#">Help Center</a>
+<a class="text-on-surface-variant font-label-md text-label-md hover:text-primary transition-colors" href="#">Contact Us</a>
+</div>
+</div>
+</footer>
+<script>
+        document.getElementById('publishBtn').addEventListener('click', function() {
+            this.innerHTML = '<span class="material-symbols-outlined animate-bounce">rocket_launch</span> Processing...';
+            setTimeout(() => {
+                alert('Congratulations! Your quiz "The Mysteries of Black Holes" is now live! 🚀');
+                this.innerHTML = '<span class="material-symbols-outlined" style="font-variation-settings: \'FILL\' 1;">check_circle</span> Published!';
+                this.classList.remove('bg-secondary-container');
+                this.classList.add('bg-tertiary-fixed', 'text-on-tertiary-fixed');
+            }, 1500);
+        });
+
+        // Simple parallax effect for decorative blobs
+        document.addEventListener('mousemove', (e) => {
+            const moveX = (e.clientX - window.innerWidth / 2) * 0.01;
+            const moveY = (e.clientY - window.innerHeight / 2) * 0.01;
+            const blobs = document.querySelectorAll('.blur-3xl');
+            blobs.forEach(blob => {
+                blob.style.transform = `translate(${moveX}px, ${moveY}px)`;
+            });
+        });
+    </script>
+</body></html>
