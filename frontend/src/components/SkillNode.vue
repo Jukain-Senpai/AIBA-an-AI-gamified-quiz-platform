@@ -1,26 +1,27 @@
 <template>
-  <div 
-    class="skill-node" 
-    :class="[colorTheme, { 'is-unlocked': isUnlocked, 'is-locked': !isUnlocked, 'prereq-locked': isLockedByPrereq }]"
-    @click="handleClick"
-    :title="skill.description"
-  >
-    <div class="icon-container">
-      <img v-if="icon" :src="`/src/assets/${icon}`" class="skill-icon" />
+  <div class="flex flex-col items-center relative">
+    <!-- Connecting line from top (if not first node) -->
+    <div v-if="hasTopConnector" class="top-connector" :class="themeClass + '-connector'"></div>
+    
+    <div 
+      class="skill-node-circle cursor-pointer z-10" 
+      :class="[themeClass, { 'is-locked': !isUnlocked, 'prereq-locked': isLockedByPrereq, 'selected': isSelected }]"
+      @click="handleClick"
+    >
+      <img v-if="icon" :src="`/src/assets/icons/ui/${icon}`" class="skill-icon" />
+      
+      <!-- Ping animation if selected -->
+      <div v-if="isSelected && !isUnlocked" class="selected-ping" :class="themeClass + '-ping'">
+        <div class="ping-inner"></div>
+      </div>
+
+      <!-- Lock overlay if locked by prereq -->
+      <div v-if="!isUnlocked && isLockedByPrereq" class="lock-overlay">
+        <img src="/src/assets/icons/states/lock.svg" class="lock-icon" />
+      </div>
     </div>
     
-    <div v-if="!isUnlocked && isLockedByPrereq" class="padlock-overlay">
-      <!-- Simple SVG Padlock -->
-      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lock-icon"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
-    </div>
-    <div v-else-if="!isUnlocked" class="cost-overlay">
-      <span>{{ skill.cost }} SP</span>
-    </div>
-
-    <div class="skill-info">
-      <p class="skill-name">{{ skill.name }}</p>
-      <p class="skill-tier">Lvl {{ skill.requiredLevel }}</p>
-    </div>
+    <p class="skill-label" :class="themeClass + '-text'">{{ skill.name }}</p>
   </div>
 </template>
 
@@ -31,128 +32,172 @@ export default {
     skill: Object,
     isUnlocked: Boolean,
     isLockedByPrereq: Boolean,
-    colorTheme: String,
-    icon: String
+    isSelected: Boolean,
+    themeClass: String, // 'primary', 'tertiary', 'secondary'
+    icon: String,
+    hasTopConnector: Boolean
   },
   methods: {
     handleClick() {
-      if (this.isLockedByPrereq && !this.isUnlocked) {
-        alert("You must unlock the previous skill in this path first!");
-        return;
-      }
-      this.$emit('unlock', this.skill);
+      this.$emit('select', this.skill);
     }
   }
 }
 </script>
 
 <style scoped>
-.skill-node {
-  position: relative;
-  width: 120px;
-  height: 120px;
-  border-radius: 50%;
-  border: 4px solid;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  background: rgba(15, 23, 42, 0.5);
+.flex { display: flex; }
+.flex-col { flex-direction: column; }
+.items-center { align-items: center; }
+.relative { position: relative; }
+.z-10 { z-index: 10; }
+.cursor-pointer { cursor: pointer; }
+
+.top-connector {
+  width: 4px;
+  height: 64px;
+  position: absolute;
+  top: -64px;
 }
 
-.skill-node:hover {
+.primary-connector {
+  background: linear-gradient(to bottom, #4231cf, rgba(66, 49, 207, 0.2));
+  border-left: 1px dashed rgba(66, 49, 207, 0.4);
+}
+.tertiary-connector {
+  background: linear-gradient(to bottom, #005b42, rgba(0, 91, 66, 0.2));
+  border-left: 1px dashed rgba(0, 91, 66, 0.4);
+}
+.secondary-connector {
+  background: linear-gradient(to bottom, #7d5800, rgba(125, 88, 0, 0.2));
+  border-left: 1px dashed rgba(125, 88, 0, 0.4);
+}
+
+.skill-node-circle {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  position: relative;
+  transition: all 0.3s ease;
+}
+
+.skill-node-circle:hover {
   transform: scale(1.05);
 }
 
-/* Red Theme (Knight) */
-.skill-node.red.is-unlocked {
-  background: linear-gradient(135deg, #ef4444, #dc2626);
-  border-color: #f87171;
-  box-shadow: 0 0 20px rgba(239, 68, 68, 0.4);
-}
-.skill-node.red.is-locked { border-color: rgba(248, 113, 113, 0.3); }
-
-/* Cyan Theme (Mage) */
-.skill-node.cyan.is-unlocked {
-  background: linear-gradient(135deg, #06b6d4, #0891b2);
-  border-color: #22d3ee;
-  box-shadow: 0 0 20px rgba(34, 211, 238, 0.4);
-}
-.skill-node.cyan.is-locked { border-color: rgba(34, 211, 238, 0.3); }
-
-/* Emerald Theme (Bard) */
-.skill-node.emerald.is-unlocked {
-  background: linear-gradient(135deg, #10b981, #059669);
-  border-color: #34d399;
-  box-shadow: 0 0 20px rgba(52, 211, 153, 0.4);
-}
-.skill-node.emerald.is-locked { border-color: rgba(52, 211, 153, 0.3); }
-
-
-/* Internals */
-.icon-container {
-  margin-bottom: 0.5rem;
-  z-index: 2;
-}
-
 .skill-icon {
-  width: 32px;
-  height: 32px;
-  border-radius: 4px;
-}
-.is-locked .skill-icon {
-  opacity: 0.4;
+  width: 24px;
+  height: 24px;
+  filter: invert(1);
 }
 
-.skill-info {
+.skill-label {
+  margin-top: 16px;
+  font-family: 'Nunito Sans', sans-serif;
+  font-size: 16px;
+  font-weight: 600;
   text-align: center;
-  z-index: 2;
 }
 
-.skill-name {
-  font-size: 0.75rem;
-  color: white;
-  margin: 0;
-  line-height: 1.1;
-  padding: 0 8px;
+/* Primary Theme (Mage) */
+.skill-node-circle.primary {
+  background: #4231cf;
+  box-shadow: 0 0 20px rgba(91, 79, 232, 0.4);
+}
+.primary-text { color: #c4c0ff; }
+.skill-node-circle.primary.selected {
+  box-shadow: 0 0 25px rgba(91, 79, 232, 0.8);
+  border-color: #c4c0ff;
 }
 
-.skill-tier {
-  font-size: 0.65rem;
-  color: rgba(255, 255, 255, 0.6);
-  margin: 2px 0 0 0;
+/* Tertiary Theme (Bard) */
+.skill-node-circle.tertiary {
+  background: #005b42;
+  box-shadow: 0 0 20px rgba(39, 224, 169, 0.4);
+}
+.tertiary-text { color: #54fdc4; }
+.skill-node-circle.tertiary.selected {
+  box-shadow: 0 0 25px rgba(39, 224, 169, 0.8);
+  border-color: #54fdc4;
 }
 
-/* Overlays */
-.padlock-overlay {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  z-index: 3;
+/* Secondary Theme (Knight) */
+.skill-node-circle.secondary {
+  background: rgba(255, 183, 2, 0.4);
+  box-shadow: 0 0 15px rgba(255, 186, 39, 0.6);
+}
+.secondary-text { color: #ffb702; }
+.skill-node-circle.secondary.selected {
+  box-shadow: 0 0 25px rgba(255, 186, 39, 0.8);
+  border-color: #ffb702;
 }
 
-.lock-icon {
-  color: #a78bfa;
-}
-
-.prereq-locked {
-  cursor: not-allowed;
+/* Locked States */
+.skill-node-circle.is-locked {
+  background: #2f2e43 !important;
+  border-color: rgba(119, 117, 134, 0.3) !important;
+  box-shadow: none !important;
   opacity: 0.7;
 }
 
-.cost-overlay {
+.skill-node-circle.is-locked .skill-icon {
+  opacity: 0.4;
+}
+
+.lock-overlay {
   position: absolute;
-  top: -5px;
-  right: -5px;
-  background: #fbbf24;
-  color: #000;
-  font-size: 0.7rem;
-  font-weight: bold;
-  padding: 2px 6px;
-  border-radius: 10px;
-  z-index: 4;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.lock-icon {
+  width: 16px;
+  height: 16px;
+  opacity: 0.6;
+  filter: invert(1);
+}
+
+.skill-node-circle.prereq-locked {
+  cursor: not-allowed;
+}
+
+/* Selected Ping */
+.selected-ping {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.primary-ping { background: #4231cf; }
+.tertiary-ping { background: #005b42; }
+.secondary-ping { background: #7d5800; }
+
+.ping-inner {
+  width: 6px;
+  height: 6px;
+  background: white;
+  border-radius: 50%;
+  animation: ping 1.5s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+
+@keyframes ping {
+  75%, 100% {
+    transform: scale(2);
+    opacity: 0;
+  }
 }
 </style>
