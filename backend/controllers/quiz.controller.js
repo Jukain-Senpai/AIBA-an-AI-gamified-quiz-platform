@@ -125,11 +125,14 @@ const getAllQuizzes = async(req, res) => {
                 id: true,
                 title: true,
                 description: true,
+                category: true,
+                difficulty: true,
                 createdAt: true,
                 creator: {
                     select: {
                         id: true,
-                        email: true
+                        email: true,
+                        username: true
                     }
                 },
                 _count: {
