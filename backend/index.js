@@ -17,6 +17,8 @@ const quizRoutes = require("./routes/quiz.routes");
 const answerOptionRoutes = require("./routes/answerOption.routes");
 const skillRoutes = require("./routes/skill.routes");
 const aiRoutes = require("./routes/ai.routes");
+const postRoutes = require("./routes/post.routes");
+const commentRoutes = require("./routes/comment.routes");
 
 app.use("/api/users", require("./routes/users.routes"));
 app.use("/api/auth", authRoutes);
@@ -24,6 +26,8 @@ app.use("/api/quizzes", quizRoutes);
 app.use("/api", answerOptionRoutes);
 app.use("/api/skills", skillRoutes);
 app.use("/api/ai", aiRoutes);
+app.use("/api/posts", postRoutes);
+app.use("/api/comments", commentRoutes);
 
 
 app.get("/", (req, res) => {

@@ -10,6 +10,9 @@ import QuizResult from "../views/QuizResult.vue";
 import CreateQuiz from "../views/CreateQuiz.vue";
 import Profile from "../views/Profile.vue";
 import Skills from "../views/Skills.vue";
+import CommunityHub from "../views/CommunityHub.vue";
+import Discussion from "../views/Discussion.vue";
+import CreatePost from "../views/CreatePost.vue";
 
 const routes = [
     { path: "/", component: Landing },
@@ -23,6 +26,9 @@ const routes = [
     { path: "/create-quiz", component: CreateQuiz },
     { path: "/profile", component: Profile },
     { path: "/skills", component: Skills },
+    { path: "/forum", component: CommunityHub },
+    { path: "/forum/post/:id", component: Discussion },
+    { path: "/forum/create", component: CreatePost },
 ];
 
 const router = createRouter({
