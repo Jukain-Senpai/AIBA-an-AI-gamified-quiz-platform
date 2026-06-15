@@ -26,6 +26,7 @@ model User {
   title     String   @default("Novice")
   path      String   @default("Unassigned")
   avatar    String   @default("NeonKnight_M.jpg")
+  winStreak Int      @default(0)
   
 
   quizzes  Quiz[]    @relation("QuizCreator")

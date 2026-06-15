@@ -31,7 +31,7 @@ router.get("/me", authMiddleware, async (req, res) => {
             email: user.email,
             level: user.level,
             xp: user.xp,
-            xpToNext: user.level * 1000,
+            xpToNext: user.level * 100,
             title: user.title,
             path: user.path,
             avatar: user.avatar,
@@ -39,8 +39,8 @@ router.get("/me", authMiddleware, async (req, res) => {
             unlockedSkills: user.skills.map(s => s.skill.name),
             stats: {
                 quizzesCompleted: allAttemptsCount,
-                winStreak: 0,
-                skillPoints: Math.floor(user.level / 2),
+                winStreak: user.winStreak,
+                skillPoints: user.skillPoints,
             },
         });
     } catch (error) {

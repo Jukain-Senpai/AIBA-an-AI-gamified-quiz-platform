@@ -52,7 +52,25 @@ const submitQuizAttempt = async (req, res) => {
             }
         }
 
-        const xpEarned = score * 10;
+        let user = await prisma.user.findUnique({
+            where: { id: userId }
+        });
+
+        // Streak logic: "consecutive quizzes passed"
+        const passed = score >= (totalQuestions / 2);
+        let winStreak = user.winStreak || 0;
+
+        if (passed) {
+            winStreak += 1;
+        } else {
+            winStreak = 0;
+        }
+
+        // Calculate XP breakdown
+        const baseXP = score * 10;
+        const completionXP = 20;
+        const streakBonusXP = winStreak > 1 ? (winStreak * 5) : 0;
+        const xpEarned = baseXP + completionXP + streakBonusXP;
 
         // Update attempt
         await prisma.attempt.update({
@@ -63,38 +81,29 @@ const submitQuizAttempt = async (req, res) => {
             },
         });
 
-
-        // Update user XP
-        await prisma.user.update({
-            where: { id: userId },
-            data: {
-                xp: { increment: xpEarned },
-            },
-        });
-
-        let user = await prisma.user.findUnique({
-            where: { id: userId }
-        });
-
-        let xp = user.xp;
-        let level = user.level;
-        let skillPoints = user.skillPoints;
+        // Level up logic
+        let xp = (user.xp || 0) + xpEarned;
+        let level = user.level || 1;
+        let skillPoints = user.skillPoints || 0;
+        let leveledUp = false;
         
-        let xpToNext = level *100;
+        let xpToNext = level * 100;
 
         while (xp >= xpToNext) {
             xp -= xpToNext;
             level += 1;
             skillPoints += 1;
+            leveledUp = true;
             xpToNext = level * 100;
         }
 
         const updatedUser = await prisma.user.update({
-            where: { id:userId },
+            where: { id: userId },
             data: {
                 xp,
                 level,
-                skillPoints
+                skillPoints,
+                winStreak
             }
         });
 
@@ -103,14 +112,19 @@ const submitQuizAttempt = async (req, res) => {
             score,
             totalQuestions,
             xpEarned,
+            baseXP,
+            completionXP,
+            streakBonusXP,
             level: updatedUser.level,
             currentXp: updatedUser.xp,
-            skillPoints: updatedUser.skillPoints
+            skillPoints: updatedUser.skillPoints,
+            winStreak: updatedUser.winStreak,
+            leveledUp
         });
 
     } catch (error) {
         console.error(error);
-        res.status(500).json({ message: "Failed to submit quiz attempt" });
+        res.status(500).json({ message: "Failed to submit quiz attempt", error: error.message, stack: error.stack });
     }
 };
 

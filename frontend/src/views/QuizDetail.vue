@@ -41,13 +41,14 @@
       Next question   
     </button>
 
-    <router-link
+    <button
     v-if="answered && currentIndex === quiz.questions.length -1"
-    to="/result"
+    @click="finishQuiz"
     class="finish-btn"
+    :disabled="isSubmitting"
     >
-    Finish Quiz
-  </router-link>
+    {{ isSubmitting ? 'Submitting...' : 'Finish Quiz' }}
+    </button>
     </div>
 
     <!-- Active Skills / Lifelines -->
@@ -90,7 +91,9 @@ export default {
       shieldUsedOnId: null, // Track which wrong answer they clicked
       healingSongActive: false,
       arcaneRevealedId: null,
-      score: 0 // Local score tracking
+      score: 0, // Local score tracking
+      answers: [],
+      isSubmitting: false
     };
   },
 
@@ -218,6 +221,7 @@ export default {
         this.selectedOptionId = optionId;
         this.correctOptionId = data.correctOptionId;
         this.answered = true;
+        this.answers.push({ selectedOptionId: optionId });
 
         if (data.correct) {
           if (isCrowdMentality) {
@@ -254,6 +258,36 @@ export default {
       this.shieldUsedOnId = null;
       this.healingSongActive = false;
       this.arcaneRevealedId = null;
+    },
+
+    async finishQuiz() {
+      if (this.isSubmitting) return;
+      this.isSubmitting = true;
+      try {
+        const token = localStorage.getItem("token");
+        const res = await fetch(`http://localhost:5000/api/quizzes/${this.quiz.id}/attempts`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`
+          },
+          body: JSON.stringify({ answers: this.answers })
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          alert(data.message || "Error submitting quiz");
+          throw new Error(data.message || "Failed to submit quiz attempt");
+        }
+        
+        // Save result locally so QuizResult page can read it
+        localStorage.setItem("latestQuizResult", JSON.stringify(data));
+        
+        this.$router.push("/result");
+      } catch (err) {
+        console.error("Failed to submit quiz attempt", err);
+      } finally {
+        this.isSubmitting = false;
+      }
     }
 
   }
