@@ -1,12 +1,12 @@
 <template>
   <div class="app-wrapper">
 
-    <div class="page-indicator">
+    <div v-if="!isQuizPlayRoute" class="page-indicator">
       <span class="indicator-dot"></span>
       <span class="indicator-text">{{ currentPageName }}</span>
     </div>
 
-    <nav class="navbar">
+    <nav v-if="!isQuizPlayRoute" class="navbar">
 
       <div class="nav-left">
         
@@ -100,6 +100,9 @@ export default {
         '/profile': 'Profile'
       };
       return routeNames[this.$route.path] || 'MysticQuest';
+    },
+    isQuizPlayRoute() {
+      return this.$route.path.startsWith('/quizzes/') && this.$route.params.id;
     }
   },
   methods: {
