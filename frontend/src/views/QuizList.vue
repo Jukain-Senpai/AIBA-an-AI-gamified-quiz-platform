@@ -84,7 +84,28 @@
 
             <!-- Card Body -->
             <div class="card-body">
-              <h2 class="card-title">{{ quiz.title }}</h2>
+              <div class="card-headline">
+                <h2 class="card-title">{{ quiz.title }}</h2>
+                <div class="card-menu-wrap">
+                  <button class="menu-btn" type="button" @click.stop="toggleMenu(quiz.id)" aria-label="Quiz actions">
+                    <span class="material-symbols-outlined">more_vert</span>
+                  </button>
+                  <div v-if="openMenuId === quiz.id" class="menu-popover" @click.stop>
+                    <button v-if="canEditQuiz(quiz)" class="menu-item" type="button" @click="editQuiz(quiz)">
+                      <span class="material-symbols-outlined">edit</span>
+                      Edit
+                    </button>
+                    <button v-if="canDeleteQuiz(quiz)" class="menu-item danger" type="button" @click="deleteQuiz(quiz)">
+                      <span class="material-symbols-outlined">delete</span>
+                      Delete
+                    </button>
+                    <button class="menu-item" type="button" @click="copyQuiz(quiz)">
+                      <span class="material-symbols-outlined">content_copy</span>
+                      Copy and edit as my own
+                    </button>
+                  </div>
+                </div>
+              </div>
 
               <p class="card-creator">
                 by <span class="creator-name">{{ getCreatorName(quiz.creator) }}</span>
@@ -106,12 +127,12 @@
                 </div>
               </div>
 
-              <!-- Action -->
               <div class="card-footer">
                 <router-link :to="`/quizzes/${quiz.id}`" class="start-btn">
                   Start Quiz
                 </router-link>
               </div>
+
             </div>
           </article>
         </section>
@@ -145,6 +166,9 @@ export default {
       loading: true,
       error: null,
       quizzes: [],
+      currentUserId: null,
+      currentUserRole: null,
+      openMenuId: null,
       searchQuery: '',
       activeCategory: 'General',
       displayCount: 9,
@@ -193,6 +217,27 @@ export default {
 
   methods: {
     getImageUrl,
+    closeMenus() {
+      this.openMenuId = null;
+    },
+    toggleMenu(quizId) {
+      this.openMenuId = this.openMenuId === quizId ? null : quizId;
+    },
+    canEditQuiz(quiz) {
+      return this.currentUserId && quiz.creator?.id === this.currentUserId;
+    },
+    canDeleteQuiz(quiz) {
+      return this.canEditQuiz(quiz) || this.currentUserRole === 'admin';
+    },
+    async loadCurrentUser() {
+      try {
+        const res = await api.get('/users/me');
+        this.currentUserId = res.data.id;
+        this.currentUserRole = (res.data.role || '').toLowerCase();
+      } catch (err) {
+        console.error(err);
+      }
+    },
     async fetchQuizzes() {
       this.loading = true;
       this.error = null;
@@ -210,6 +255,24 @@ export default {
       } finally {
         this.loading = false;
       }
+    },
+    async deleteQuiz(quiz) {
+      if (!confirm(`Delete "${quiz.title}"?`)) return;
+      try {
+        await api.delete(`/quizzes/${quiz.id}`);
+        this.openMenuId = null;
+        await this.fetchQuizzes();
+      } catch (err) {
+        alert(err.response?.data?.message || 'Failed to delete quiz.');
+      }
+    },
+    editQuiz(quiz) {
+      this.openMenuId = null;
+      this.$router.push({ path: '/create-quiz', query: { mode: 'edit', quizId: quiz.id } });
+    },
+    copyQuiz(quiz) {
+      this.openMenuId = null;
+      this.$router.push({ path: '/create-quiz', query: { mode: 'copy', copyFrom: quiz.id } });
     },
 
     setCategory(val) {
@@ -268,7 +331,11 @@ export default {
   },
 
   mounted() {
-    this.fetchQuizzes();
+    this.loadCurrentUser().finally(() => this.fetchQuizzes());
+    window.addEventListener('click', this.closeMenus);
+  },
+  beforeUnmount() {
+    window.removeEventListener('click', this.closeMenus);
   },
 };
 </script>
@@ -569,18 +636,20 @@ export default {
   background: #ffffff;
   border: 1px solid #e2e0fc;
   border-radius: 24px;
-  overflow: hidden;
+  overflow: visible;
   display: flex;
   flex-direction: column;
   box-shadow: 0 4px 20px rgba(91, 79, 232, 0.07);
   transition: all 0.3s ease;
   height: 100%;
+  position: relative;
 }
 
 .quiz-card:hover {
   transform: translateY(-6px);
   box-shadow: 0 12px 32px rgba(66, 49, 207, 0.15);
   border-color: #c4c0ff;
+  z-index: 20;
 }
 
 /* ── Thumbnail Placeholder ── */
@@ -642,6 +711,13 @@ export default {
   display: flex;
   flex-direction: column;
   flex: 1;
+}
+
+.card-headline {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
 }
 
 .card-title {
@@ -718,6 +794,68 @@ export default {
 }
 
 /* ── Card Footer ── */
+.card-menu-wrap {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.menu-btn {
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  border: none;
+  border-radius: 8px;
+  background: #efecff;
+  color: #4231cf;
+  cursor: pointer;
+}
+
+.menu-btn:hover {
+  background: #e3dfff;
+}
+
+.menu-popover {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  z-index: 40;
+  min-width: 240px;
+  background: #ffffff;
+  border: 1px solid #e2e0fc;
+  border-radius: 8px;
+  box-shadow: 0 12px 28px rgba(66, 49, 207, 0.12);
+  overflow: hidden;
+}
+
+.menu-item {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  border: none;
+  background: transparent;
+  color: #1a1a2e;
+  font-family: 'Nunito Sans', sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  text-align: left;
+  cursor: pointer;
+}
+
+.menu-item:hover {
+  background: #f5f2ff;
+}
+
+.menu-item.danger {
+  color: #ba1a1a;
+}
+
+.menu-item.danger:hover {
+  background: #ffdad6;
+}
+
 .card-footer {
   margin-top: auto;
   display: flex;

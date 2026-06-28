@@ -22,9 +22,15 @@
             </button>
           </div>
           <h1>{{ user.username || user.email.split('@')[0] }}</h1>
-          <div class="title-badge">
-            <span class="material-symbols-outlined" style="font-size: 14px; vertical-align: text-bottom;">star</span>
-            Level {{ user.level }} • {{ user.title }}
+          <div class="title-row">
+            <div class="title-badge">
+              <span class="material-symbols-outlined" style="font-size: 14px; vertical-align: text-bottom;">star</span>
+              Level {{ user.level }} • {{ user.title }}
+            </div>
+            <div v-if="isAdminUser" class="admin-badge">
+              <span class="material-symbols-outlined" style="font-size: 14px;">verified</span>
+              Admin
+            </div>
           </div>
         </div>
         <div class="banner-bottom">
@@ -199,6 +205,7 @@ export default {
       saving: false,
       uploadingAvatar: false,
       editError: null,
+      isAdminUser: false,
       editForm: {
         username: '',
         email: '',
@@ -246,6 +253,7 @@ export default {
       try {
         const response = await api.get('/users/me');
         this.user = response.data;
+        this.isAdminUser = (this.user.role || '').toLowerCase() === 'admin';
         this.editForm.username = this.user.username || '';
         this.editForm.email = this.user.email || '';
         this.editForm.avatar = this.user.avatar || 'NeonKnight_M.jpg';
@@ -421,6 +429,25 @@ export default {
   padding: 6px 16px;
   border-radius: 9999px;
   font-weight: 700;
+  font-size: 14px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.title-row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+}
+
+.admin-badge {
+  background: #d9fff0;
+  color: #007657;
+  padding: 6px 14px;
+  border-radius: 9999px;
+  font-weight: 800;
   font-size: 14px;
   display: inline-flex;
   align-items: center;

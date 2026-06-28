@@ -27,6 +27,10 @@ router.get("/me", authMiddleware, async (req, res) => {
             },
         });
 
+        if (!user) {
+            return res.status(404).json({ error: "User not found" });
+        }
+
         const allAttemptsCount = await prisma.attempt.count({
             where: { userId: req.user.id }
         });
@@ -35,6 +39,7 @@ router.get("/me", authMiddleware, async (req, res) => {
             id: user.id,
             username: user.username,
             email: user.email,
+            role: user.role,
             level: user.level,
             xp: user.xp,
             xpToNext: user.level * 100,

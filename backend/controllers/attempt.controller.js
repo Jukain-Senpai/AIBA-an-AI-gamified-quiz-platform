@@ -1,4 +1,5 @@
 const prisma = require("../utils/prisma");
+const { canAccessQuiz } = require("../utils/access");
 
 const submitQuizAttempt = async (req, res) => {
     try {
@@ -8,6 +9,23 @@ const submitQuizAttempt = async (req, res) => {
 
         if (!Array.isArray(answers) || answers.length === 0) {
             return res.status(400).json({ message: "Answers are required" });
+        }
+
+        const quiz = await prisma.quiz.findUnique({
+            where: { id: quizId },
+            select: {
+                id: true,
+                creatorId: true,
+                isPublished: true,
+            },
+        });
+
+        if (!quiz) {
+            return res.status(404).json({ message: "Quiz not found" });
+        }
+
+        if (!canAccessQuiz(req.user, quiz)) {
+            return res.status(403).json({ message: "This quiz is private" });
         }
 
         // Get total questions

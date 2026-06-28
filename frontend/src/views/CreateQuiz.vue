@@ -335,12 +335,14 @@
 </template>
 
 <script>
-import { getImageUrl, uploadImage } from '../services/api';
+import api, { getImageUrl, uploadImage } from '../services/api';
 
 export default {
   data() {
     return {
       currentStep: 1,
+      mode: "create",
+      sourceQuizId: null,
       showAiModal: false,
       aiPrompt: "",
       isGenerating: false,
@@ -385,6 +387,56 @@ export default {
   },
   methods: {
     getImageUrl,
+    cloneQuestions(questions) {
+      const source = Array.isArray(questions) && questions.length > 0 ? questions : [{
+        text: "",
+        answers: ["", "", "", ""],
+        correctIndex: 0,
+        image: null,
+      }];
+
+      return source.map((question) => ({
+        text: question.text || "",
+        answers: Array.isArray(question.answers) && question.answers.length > 0
+          ? [...question.answers, "", "", "", ""].slice(0, 4)
+          : ["", "", "", ""],
+        correctIndex: typeof question.correctIndex === "number" ? question.correctIndex : 0,
+        image: question.image || null,
+      }));
+    },
+    applyQuizData(quiz, questions) {
+      this.quiz.title = quiz?.title || "";
+      this.quiz.description = quiz?.description || "";
+      this.quiz.category = quiz?.category || "History";
+      this.quiz.difficulty = quiz?.difficulty || "Intermediate";
+      this.quiz.thumbnail = quiz?.thumbnail || null;
+      this.visibility = quiz?.isPublished === false ? "Private" : "Public";
+      this.questions = this.cloneQuestions(questions);
+      this.selectedQuestionIndex = 0;
+    },
+    async loadSourceQuiz() {
+      const quizId = this.$route.query.quizId || this.$route.query.copyFrom;
+      if (!quizId) return;
+
+      this.sourceQuizId = quizId;
+      this.mode = this.$route.query.mode === "edit" ? "edit" : "copy";
+
+      try {
+        const res = await api.get(`/quizzes/${quizId}`);
+        const quiz = res.data;
+        const questions = (quiz.questions || []).map((question) => ({
+          text: question.text,
+          image: question.image || null,
+          answers: (question.options || []).map((option) => option.text),
+          correctIndex: 0,
+        }));
+        this.applyQuizData(quiz, questions);
+      } catch (err) {
+        console.error(err);
+        alert(err.response?.data?.message || "Failed to load quiz data.");
+        this.$router.push("/quizzes");
+      }
+    },
     async handleThumbnailUpload(event) {
       const file = event.target.files[0];
       if (!file) return;
@@ -482,14 +534,20 @@ export default {
       this.isSubmitting = true;
       try {
         const token = localStorage.getItem("token");
-        const res = await fetch("http://localhost:5000/api/quizzes", {
-          method: "POST",
+        const isEdit = this.mode === "edit" && this.sourceQuizId;
+        const res = await fetch(
+          isEdit ? `http://localhost:5000/api/quizzes/${this.sourceQuizId}` : "http://localhost:5000/api/quizzes",
+          {
+          method: isEdit ? "PUT" : "POST",
           headers: {
             "Content-Type": "application/json",
             "Authorization": `Bearer ${token}`
           },
           body: JSON.stringify({
-            quiz: this.quiz,
+            quiz: {
+              ...this.quiz,
+              isPublished: this.visibility === "Public"
+            },
             questions: this.questions
           })
         });
@@ -497,7 +555,11 @@ export default {
         if (!res.ok) {
           throw new Error(data.message || "Failed to save quiz");
         }
-        alert("Congratulations! Your quiz is now live! 🚀");
+        alert(isEdit
+          ? "Quiz updated successfully."
+          : (this.visibility === "Public"
+            ? "Congratulations! Your quiz is now live!"
+            : "Your quiz has been saved as private."));
         this.$router.push("/quizzes");
       } catch (err) {
         console.error(err);
@@ -552,6 +614,9 @@ export default {
         this.isGenerating = false;
       }
     }
+  },
+  mounted() {
+    this.loadSourceQuiz();
   }
 };
 </script>

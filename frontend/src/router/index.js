@@ -13,6 +13,8 @@ import Skills from "../views/Skills.vue";
 import CommunityHub from "../views/CommunityHub.vue";
 import Discussion from "../views/Discussion.vue";
 import CreatePost from "../views/CreatePost.vue";
+import Admin from "../views/Admin.vue";
+import { getCurrentUserRole } from "../services/session";
 
 const routes = [
     { path: "/", component: Landing },
@@ -29,6 +31,7 @@ const routes = [
     { path: "/forum", component: CommunityHub },
     { path: "/forum/post/:id", component: Discussion },
     { path: "/forum/create", component: CreatePost },
+    { path: "/admin", component: Admin, meta: { requiresAdmin: true } },
 ];
 
 const router = createRouter({
@@ -38,11 +41,15 @@ const router = createRouter({
 
 router.beforeEach((to, from, next) => {
     const publicPages = ['/', '/login', '/register'];
-    const authRequired = !publicPages.includes(to.path);
     const loggedIn = localStorage.getItem('token');
+    const userRole = getCurrentUserRole();
 
-    if (authRequired && !loggedIn) {
+    if (!publicPages.includes(to.path) && !loggedIn) {
         return next('/login');
+    }
+
+    if (to.meta.requiresAdmin && userRole !== 'admin') {
+        return next('/dashboard');
     }
 
     next();

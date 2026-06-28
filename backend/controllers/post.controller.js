@@ -1,4 +1,5 @@
 const prisma = require("../utils/prisma");
+const { canManageContent } = require("../utils/access");
 
 const createPost = async (req, res) => {
     try {
@@ -154,7 +155,7 @@ const deletePost = async (req, res) => {
             return res.status(404).json({ message: "Post not found" });
         }
 
-        if (post.authorId !== req.user.id && req.user.role !== "ADMIN") {
+        if (!canManageContent(req.user, post.authorId)) {
             return res.status(403).json({ message: "Unauthorized" });
         }
 

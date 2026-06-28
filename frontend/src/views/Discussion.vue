@@ -195,12 +195,13 @@ export default {
       submittingComment: false,
       commentError: null,
       currentUserId: null,
+      currentUserRole: null,
     };
   },
   computed: {
     canDelete() {
       if (!this.post || !this.currentUserId) return false;
-      return this.post.author.id === this.currentUserId;
+      return this.post.author.id === this.currentUserId || this.currentUserRole === 'admin';
     },
   },
   methods: {
@@ -242,6 +243,7 @@ export default {
       try {
         const res = await api.get('/users/me');
         this.currentUserId = res.data.id;
+        this.currentUserRole = (res.data.role || '').toLowerCase();
       } catch (err) {
         // Not critical
       }
@@ -309,7 +311,7 @@ export default {
       }
     },
     canDeleteComment(comment) {
-      return this.currentUserId && comment.author.id === this.currentUserId;
+      return this.currentUserId && (comment.author.id === this.currentUserId || this.currentUserRole === 'admin');
     },
     getCategoryEmoji(category) {
       const map = {

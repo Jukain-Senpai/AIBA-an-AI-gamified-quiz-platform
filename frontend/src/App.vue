@@ -41,6 +41,10 @@
             <img src="/src/assets/Forum.svg" class="nav-icon" />
             <span>Forum</span>
           </router-link>
+          <router-link v-if="isAdminUser" to="/admin" class="nav-item">
+            <img src="/src/assets/Dashboard.svg" class="nav-icon" />
+            <span>Admin</span>
+          </router-link>
           <router-link to="/profile" class="nav-item">
             <img src="/src/assets/Profile.svg" class="nav-icon" />
             <span>Profile</span>
@@ -75,16 +79,19 @@
 </template>
 
 <script>
+import { getCurrentUserRole } from './services/session';
+
 export default {
   data() {
     return {
-      isLoggedIn: !!localStorage.getItem("token")
+      isLoggedIn: !!localStorage.getItem("token"),
+      currentUserRole: getCurrentUserRole()
     };
   },
   watch: {
     // Re-check login status whenever the route changes
     $route() {
-      this.isLoggedIn = !!localStorage.getItem("token");
+      this.syncAuthState();
     }
   },
   computed: {
@@ -95,20 +102,28 @@ export default {
         '/register': 'Register',
         '/dashboard': 'Dashboard',
         '/quizzes': 'Quizzes',
+        '/admin': 'Admin',
         '/skills': 'Skills',
         '/forum': 'Forum',
         '/profile': 'Profile'
       };
       return routeNames[this.$route.path] || 'MysticQuest';
     },
+    isAdminUser() {
+      return this.currentUserRole === 'admin';
+    },
     isQuizPlayRoute() {
       return this.$route.path.startsWith('/quizzes/') && this.$route.params.id;
     }
   },
   methods: {
+    syncAuthState() {
+      this.isLoggedIn = !!localStorage.getItem("token");
+      this.currentUserRole = getCurrentUserRole();
+    },
     logout() {
       localStorage.removeItem("token");
-      this.isLoggedIn = false;
+      this.syncAuthState();
       this.$router.push("/login");
     }
   }

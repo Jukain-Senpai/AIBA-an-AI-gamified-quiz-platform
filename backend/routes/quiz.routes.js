@@ -6,7 +6,9 @@ const {
     getQuizById,
     getAllQuizzes,
     checkAnswer,
-    useSkill
+    useSkill,
+    deleteQuiz,
+    updateQuiz
  } = require("../controllers/quiz.controller");
 const protect = require("../middleware/auth.middleware");
 const questionRoutes = require("./question.routes");
@@ -56,6 +58,8 @@ router.post("/", protect, createQuiz);
  *         description: List of quizzes
  */
 router.get("/", protect, getAllQuizzes);
+router.delete("/:quizId", protect, deleteQuiz);
+router.put("/:quizId", protect, updateQuiz);
 
 // Critical fix: Put specific endpoints before /:quizId
 router.post("/check-answer", protect, checkAnswer);
