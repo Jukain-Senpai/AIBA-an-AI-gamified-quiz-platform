@@ -77,6 +77,9 @@
               <button class="tool-btn" type="button" title="List">
                 <img src="/src/assets/icons/ui/format_list_bulleted.svg" class="icon-sm icon-muted" alt="List" />
               </button>
+              <button class="tool-btn" type="button" title="Attach Image" @click="$refs.postImageInput.click()">
+                <span class="material-symbols-outlined icon-muted" style="font-size: 18px;">image</span>
+              </button>
             </div>
             <textarea
               id="post-body"
@@ -87,6 +90,14 @@
               @focus="contentFocused = true"
               @blur="contentFocused = false"
             ></textarea>
+            
+            <!-- Image Upload UI -->
+            <input ref="postImageInput" type="file" accept="image/*" @change="handleImageUpload" style="display: none;" />
+            <div v-if="form.image" class="post-image-preview" style="padding: 10px; border-top: 1px solid rgba(200, 196, 216, 0.3); position: relative; background: rgba(255, 255, 255, 0.6);">
+              <img :src="getImageUrl(form.image)" alt="Attached Image" style="max-height: 200px; border-radius: 8px;" />
+              <button type="button" @click="form.image = null" style="position: absolute; top: 15px; left: 15px; background: #ba1a1a; color: white; border: none; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; cursor: pointer;">✕</button>
+            </div>
+            <p v-if="uploadingImage" style="padding: 10px; color: #4231cf; font-weight: bold; font-size: 14px; margin: 0;">Uploading image...</p>
           </div>
           <span v-if="errors.content" class="field-error">{{ errors.content }}</span>
         </div>
@@ -135,7 +146,7 @@
 </template>
 
 <script>
-import api from '../services/api';
+import api, { getImageUrl, uploadImage } from '../services/api';
 
 export default {
   name: 'CreatePost',
@@ -146,10 +157,12 @@ export default {
         content: '',
         category: '',
         tags: [],
+        image: null,
       },
       tagInput: '',
       contentFocused: false,
       submitting: false,
+      uploadingImage: false,
       submitError: null,
       errors: {
         title: '',
@@ -164,6 +177,21 @@ export default {
     };
   },
   methods: {
+    getImageUrl,
+    async handleImageUpload(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      this.uploadingImage = true;
+      try {
+        const data = await uploadImage(file, 'forum-post');
+        this.form.image = data.url;
+      } catch (err) {
+        alert(err.response?.data?.message || "Failed to upload image.");
+      } finally {
+        this.uploadingImage = false;
+        event.target.value = null;
+      }
+    },
     addTag() {
       const tag = this.tagInput.trim().replace(/^#/, '').replace(/,/g, '');
       if (tag && !this.form.tags.includes(tag) && this.form.tags.length < 5) {
@@ -205,6 +233,7 @@ export default {
         const res = await api.post('/posts', {
           title: this.form.title.trim(),
           content: this.form.content.trim(),
+          image: this.form.image,
           category: this.form.category || 'General',
           tags: this.form.tags,
         });

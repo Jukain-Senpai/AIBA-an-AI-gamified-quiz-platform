@@ -87,8 +87,8 @@
                   <p>{{ attempt.quiz.category || 'General' }} • {{ new Date(attempt.completedAt || attempt.startedAt).toLocaleDateString() }}</p>
                 </div>
                 <div class="activity-score">
-                  <span class="score-percent" :class="getScoreColorClass(attempt.score)">{{ attempt.score }}%</span>
-                  <span class="score-label" :class="getScoreColorClass(attempt.score)">{{ getScoreMessage(attempt.score) }}</span>
+                  <span class="score-percent" :class="getScoreColorClass(calculateScorePercent(attempt))">{{ calculateScorePercent(attempt) }}%</span>
+                  <span class="score-label" :class="getScoreColorClass(calculateScorePercent(attempt))">{{ getScoreMessage(calculateScorePercent(attempt)) }}</span>
                 </div>
               </div>
               <p v-if="!user.recentAttempts || user.recentAttempts.length === 0" class="empty-state">
@@ -152,16 +152,26 @@
           <p v-if="editError" class="error-msg">{{ editError }}</p>
         </form>
 
-        <div v-else class="avatar-grid">
-          <div 
-            v-for="avatar in availableAvatars" 
-            :key="avatar"
-            class="avatar-option"
-            :class="{ selected: editForm.avatar === avatar }"
-            @click="editForm.avatar = avatar"
-          >
-            <img :src="getAvatarUrl(avatar)" />
+        <div v-else class="avatar-grid-container">
+          <div class="custom-avatar-upload">
+            <label for="avatar-upload" class="upload-btn">
+              <span class="material-symbols-outlined">upload</span> Upload Custom Avatar
+            </label>
+            <input id="avatar-upload" type="file" accept="image/*" @change="handleAvatarUpload" style="display: none;" />
+            <p v-if="uploadingAvatar" class="upload-status">Uploading...</p>
           </div>
+          <div class="avatar-grid">
+            <div 
+              v-for="avatar in availableAvatars" 
+              :key="avatar"
+              class="avatar-option"
+              :class="{ selected: editForm.avatar === avatar }"
+              @click="editForm.avatar = avatar"
+            >
+              <img :src="getAvatarUrl(avatar)" />
+            </div>
+          </div>
+          <p v-if="editError" class="error-msg">{{ editError }}</p>
           <div class="modal-actions full-width">
             <button type="button" class="btn-cancel" @click="isEditing = false">Cancel</button>
             <button type="button" class="btn-save" @click="updateProfile" :disabled="saving">
@@ -175,7 +185,7 @@
 </template>
 
 <script>
-import api from '../services/api';
+import api, { getImageUrl, uploadImage } from '../services/api';
 
 export default {
   name: 'Profile',
@@ -187,6 +197,7 @@ export default {
       isEditing: false,
       editTab: 'info',
       saving: false,
+      uploadingAvatar: false,
       editError: null,
       editForm: {
         username: '',
@@ -206,6 +217,7 @@ export default {
   methods: {
     getAvatarUrl(filename) {
       if (!filename) return '/src/assets/NeonKnight_M.jpg';
+      if (filename.startsWith('/uploads/') || filename.startsWith('http')) return getImageUrl(filename);
       return `/src/assets/${filename}`;
     },
     getScoreColorClass(score) {
@@ -217,6 +229,12 @@ export default {
       if (score >= 90) return 'Excellent!';
       if (score >= 70) return 'Good job!';
       return 'Keep trying!';
+    },
+    calculateScorePercent(attempt) {
+      if (!attempt.quiz || !attempt.quiz._count || !attempt.quiz._count.questions) return 0;
+      const total = attempt.quiz._count.questions;
+      if (total === 0) return 0;
+      return Math.round((attempt.score / total) * 100);
     },
     logout() {
       localStorage.removeItem("token");
@@ -241,6 +259,24 @@ export default {
         }
       } finally {
         this.loading = false;
+      }
+    },
+    async handleAvatarUpload(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      this.uploadingAvatar = true;
+      this.editError = null;
+      try {
+        const data = await uploadImage(file, 'avatar');
+        this.editForm.avatar = data.url;
+        if (!this.availableAvatars.includes(data.url)) {
+          this.availableAvatars.unshift(data.url);
+        }
+      } catch (err) {
+        this.editError = err.response?.data?.message || "Failed to upload image. Max 5MB.";
+      } finally {
+        this.uploadingAvatar = false;
+        event.target.value = null;
       }
     },
     async updateProfile() {

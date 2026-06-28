@@ -3,29 +3,29 @@ const prisma = require("../utils/prisma");
 const createQuestion = async (req, res) => {
     try {
         const { quizId } = req.params;
-        const { text, order } = req.body;
+        const { text, order, image } = req.body;
 
         if (!text) {
-            return res.status(400).json({ message: "Question text is required"});
-
+            return res.status(400).json({ message: "Question text is required" });
         }
 
         const quiz = await prisma.quiz.findUnique({
-            where: { id:Number(quizId) },
+            where: { id: Number(quizId) },
         });
 
         if (!quiz) {
-            return res.status(404).json({ message: "Quiz not found"});
+            return res.status(404).json({ message: "Quiz not found" });
         }
 
         if (quiz.creatorId !== req.user.id) {
-            return res.status(403).json({ message: "Not authorized to modify this quiz"});
+            return res.status(403).json({ message: "Not authorized to modify this quiz" });
         }
 
         const question = await prisma.question.create({
             data: {
                 text,
                 order: order ?? 1,
+                image: image || null,
                 quizId: Number(quizId),
             },
         });

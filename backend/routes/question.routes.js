@@ -31,6 +31,8 @@ const protect = require("../middleware/auth.middleware");
  *                 type: string
  *               order:
  *                 type: integer
+ *               image:
+ *                 type: string
  *     responses:
  *       201:
  *         description: Question created

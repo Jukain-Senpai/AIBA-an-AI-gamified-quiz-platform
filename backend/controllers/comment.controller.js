@@ -3,7 +3,7 @@ const prisma = require("../utils/prisma");
 const createComment = async (req, res) => {
     try {
         const { postId } = req.params;
-        const { content } = req.body;
+        const { content, image } = req.body;
 
         if (!content) {
             return res.status(400).json({ message: "Content is required" });
@@ -17,14 +17,15 @@ const createComment = async (req, res) => {
         const newComment = await prisma.comment.create({
             data: {
                 content,
+                image: image || null,
                 postId: Number(postId),
-                authorId: req.user.id
+                authorId: req.user.id,
             },
             include: {
                 author: {
-                    select: { id: true, username: true, avatar: true, title: true }
-                }
-            }
+                    select: { id: true, username: true, avatar: true, title: true },
+                },
+            },
         });
 
         res.status(201).json(newComment);
@@ -44,30 +45,30 @@ const toggleUpvoteComment = async (req, res) => {
             where: {
                 userId_commentId: {
                     userId,
-                    commentId
-                }
-            }
+                    commentId,
+                },
+            },
         });
 
         if (existingLike) {
             await prisma.commentLike.delete({
-                where: { id: existingLike.id }
+                where: { id: existingLike.id },
             });
             await prisma.comment.update({
                 where: { id: commentId },
-                data: { upvotes: { decrement: 1 } }
+                data: { upvotes: { decrement: 1 } },
             });
             return res.status(200).json({ message: "Upvote removed", liked: false });
-        } else {
-            await prisma.commentLike.create({
-                data: { userId, commentId }
-            });
-            await prisma.comment.update({
-                where: { id: commentId },
-                data: { upvotes: { increment: 1 } }
-            });
-            return res.status(200).json({ message: "Upvoted", liked: true });
         }
+
+        await prisma.commentLike.create({
+            data: { userId, commentId },
+        });
+        await prisma.comment.update({
+            where: { id: commentId },
+            data: { upvotes: { increment: 1 } },
+        });
+        return res.status(200).json({ message: "Upvoted", liked: true });
     } catch (error) {
         console.error(error);
         res.status(500).json({ message: "Failed to toggle upvote" });
@@ -98,5 +99,5 @@ const deleteComment = async (req, res) => {
 module.exports = {
     createComment,
     toggleUpvoteComment,
-    deleteComment
+    deleteComment,
 };

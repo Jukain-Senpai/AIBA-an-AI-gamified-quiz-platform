@@ -89,6 +89,8 @@ router.get("/:id", protect, getPostById);
  *                 type: string
  *               content:
  *                 type: string
+ *               image:
+ *                 type: string
  *               category:
  *                 type: string
  *               tags:

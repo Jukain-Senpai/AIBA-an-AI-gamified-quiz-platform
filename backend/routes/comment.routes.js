@@ -41,6 +41,8 @@ const {
  *             properties:
  *               content:
  *                 type: string
+ *               image:
+ *                 type: string
  *     responses:
  *       201:
  *         description: Comment created successfully

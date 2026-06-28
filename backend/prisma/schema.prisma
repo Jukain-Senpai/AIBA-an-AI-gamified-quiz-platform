@@ -64,6 +64,7 @@ model Quiz {
   id          Int      @id @default(autoincrement())
   title       String
   description String?
+  thumbnail   String?
   difficulty  String   @default("Easy")
   category    String   @default("General")
   isPublished Boolean  @default(false)
@@ -80,6 +81,7 @@ model Question {
   id    Int    @id @default(autoincrement())
   text  String
   order Int
+  image String?
 
   quizId Int
   quiz   Quiz @relation(fields: [quizId], references: [id])
@@ -131,6 +133,7 @@ model Post {
   id          Int       @id @default(autoincrement())
   title       String
   content     String
+  image       String?
   category    String?
   tags        String[]
   upvotes     Int       @default(0)
@@ -147,6 +150,7 @@ model Post {
 model Comment {
   id          Int       @id @default(autoincrement())
   content     String
+  image       String?
   upvotes     Int       @default(0)
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt

@@ -53,6 +53,22 @@
             </div>
 
             <div class="form-group">
+              <label>Quiz Thumbnail (Optional)</label>
+              <div class="media-upload" @click="$refs.thumbnailInput.click()" style="cursor: pointer; border: 2px dashed var(--border-color); border-radius: 12px; padding: 20px; text-align: center; background: var(--surface-low); transition: all 0.2s;">
+                <div v-if="quiz.thumbnail" class="uploaded-image-preview" style="position: relative; display: inline-block;">
+                  <img :src="getImageUrl(quiz.thumbnail)" alt="Thumbnail" style="max-height: 150px; border-radius: 8px;" />
+                  <span class="remove-img material-symbols-outlined" @click.stop="quiz.thumbnail = null" style="position: absolute; top: -10px; right: -10px; background: #ba1a1a; color: white; border-radius: 50%; padding: 4px; cursor: pointer; font-size: 16px;">close</span>
+                </div>
+                <div v-else class="upload-placeholder">
+                  <span class="material-symbols-outlined" style="font-size: 32px; color: var(--text-outline);">image</span>
+                  <p v-if="uploadingThumbnail" style="color: var(--primary); font-weight: bold;">Uploading...</p>
+                  <p v-else style="color: var(--text-muted); margin-top: 8px;">Click to upload thumbnail</p>
+                </div>
+              </div>
+              <input ref="thumbnailInput" type="file" accept="image/*" @change="handleThumbnailUpload" style="display: none;" />
+            </div>
+
+            <div class="form-group">
               <label class="mb-sm">Category</label>
               <div class="category-grid">
                 <button 
@@ -168,15 +184,23 @@
 
             <div class="form-group">
               <label>Media (Optional)</label>
-              <div class="media-upload">
-                <div class="upload-icon-wrapper">
-                  <span class="material-symbols-outlined">image</span>
+              <div class="media-upload" @click="$refs.questionImageInput.click()" style="cursor: pointer; border: 2px dashed var(--border-color); border-radius: 12px; padding: 20px; text-align: center; background: var(--surface-low); transition: all 0.2s;">
+                <div v-if="activeQuestion.image" class="uploaded-image-preview" style="position: relative; display: inline-block;">
+                  <img :src="getImageUrl(activeQuestion.image)" alt="Question Image" style="max-height: 150px; border-radius: 8px;" />
+                  <span class="remove-img material-symbols-outlined" @click.stop="activeQuestion.image = null" style="position: absolute; top: -10px; right: -10px; background: #ba1a1a; color: white; border-radius: 50%; padding: 4px; cursor: pointer; font-size: 16px;">close</span>
                 </div>
-                <div class="upload-text">
-                  <p class="upload-title">Click to upload image</p>
-                  <p class="upload-subtitle">Supports PNG, JPG (Max 5MB)</p>
+                <div v-else class="upload-placeholder">
+                  <div class="upload-icon-wrapper">
+                    <span class="material-symbols-outlined" style="font-size: 32px; color: var(--text-outline);">image</span>
+                  </div>
+                  <div class="upload-text" style="margin-top: 8px;">
+                    <p class="upload-title" v-if="uploadingQuestionImage" style="color: var(--primary); font-weight: bold;">Uploading...</p>
+                    <p class="upload-title" v-else style="color: var(--text-muted);">Click to upload image</p>
+                    <p class="upload-subtitle" style="font-size: 12px; color: var(--text-outline);">Supports PNG, JPG (Max 5MB)</p>
+                  </div>
                 </div>
               </div>
+              <input ref="questionImageInput" type="file" accept="image/*" @change="handleQuestionImageUpload" style="display: none;" />
             </div>
 
             <div class="form-group">
@@ -311,6 +335,8 @@
 </template>
 
 <script>
+import { getImageUrl, uploadImage } from '../services/api';
+
 export default {
   data() {
     return {
@@ -320,6 +346,8 @@ export default {
       isGenerating: false,
       aiError: "",
       isSubmitting: false,
+      uploadingThumbnail: false,
+      uploadingQuestionImage: false,
       
       quiz: {
         title: "",
@@ -356,6 +384,35 @@ export default {
     }
   },
   methods: {
+    getImageUrl,
+    async handleThumbnailUpload(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      this.uploadingThumbnail = true;
+      try {
+        const data = await uploadImage(file, 'quiz-thumbnail');
+        this.quiz.thumbnail = data.url;
+      } catch (err) {
+        alert(err.response?.data?.message || "Failed to upload thumbnail.");
+      } finally {
+        this.uploadingThumbnail = false;
+        event.target.value = null;
+      }
+    },
+    async handleQuestionImageUpload(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      this.uploadingQuestionImage = true;
+      try {
+        const data = await uploadImage(file, 'quiz-question');
+        this.activeQuestion.image = data.url;
+      } catch (err) {
+        alert(err.response?.data?.message || "Failed to upload question image.");
+      } finally {
+        this.uploadingQuestionImage = false;
+        event.target.value = null;
+      }
+    },
     getCategoryIcon(cat) {
       const map = {
         'History': 'history',

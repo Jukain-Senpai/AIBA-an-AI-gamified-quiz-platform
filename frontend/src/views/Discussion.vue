@@ -50,6 +50,9 @@
 
         <div class="post-article-content">
           <p>{{ post.content }}</p>
+          <div v-if="post.image" class="post-image-container" style="margin-top: 1rem;">
+            <img :src="getImageUrl(post.image)" alt="Post Attachment" style="max-width: 100%; max-height: 400px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);" />
+          </div>
         </div>
 
         <!-- Post Actions -->
@@ -99,7 +102,19 @@
               <button class="tool-btn" title="List">
                 <img src="/src/assets/icons/ui/format_list_bulleted.svg" class="icon-sm icon-muted" alt="List" />
               </button>
+              <button class="tool-btn" type="button" title="Attach Image" @click="$refs.commentImageInput.click()">
+                <span class="material-symbols-outlined icon-muted" style="font-size: 18px;">image</span>
+              </button>
             </div>
+            
+            <!-- Image Upload UI inside composer-card -->
+            <input ref="commentImageInput" type="file" accept="image/*" @change="handleImageUpload" style="display: none;" />
+            <div v-if="commentImage" class="post-image-preview" style="padding: 10px; border-top: 1px solid rgba(200, 196, 216, 0.3); position: relative; background: #fafafa;">
+              <img :src="getImageUrl(commentImage)" alt="Attached Image" style="max-height: 150px; border-radius: 8px;" />
+              <button type="button" @click="commentImage = null" style="position: absolute; top: 15px; left: 15px; background: #ba1a1a; color: white; border: none; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; cursor: pointer;">✕</button>
+            </div>
+            <p v-if="uploadingImage" style="padding: 10px; color: #4231cf; font-weight: bold; font-size: 14px; margin: 0; background: #fafafa;">Uploading image...</p>
+            
             <button
               class="btn-post-reply"
               :disabled="!newComment.trim() || submittingComment"
@@ -136,6 +151,9 @@
             </div>
 
             <p class="comment-content">{{ comment.content }}</p>
+            <div v-if="comment.image" class="comment-image-container" style="margin-top: 10px; margin-bottom: 12px;">
+              <img :src="getImageUrl(comment.image)" alt="Reply Attachment" style="max-height: 200px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.08);" />
+            </div>
 
             <div class="comment-actions">
               <button class="comment-action-btn" @click="toggleCommentUpvote(comment)">
@@ -160,7 +178,7 @@
 </template>
 
 <script>
-import api from '../services/api';
+import api, { getImageUrl, uploadImage } from '../services/api';
 
 export default {
   name: 'Discussion',
@@ -171,6 +189,8 @@ export default {
       post: null,
       hasUpvoted: false,
       newComment: '',
+      commentImage: null,
+      uploadingImage: false,
       composerFocused: false,
       submittingComment: false,
       commentError: null,
@@ -184,6 +204,21 @@ export default {
     },
   },
   methods: {
+    getImageUrl,
+    async handleImageUpload(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      this.uploadingImage = true;
+      try {
+        const data = await uploadImage(file, 'forum-comment');
+        this.commentImage = data.url;
+      } catch (err) {
+        alert(err.response?.data?.message || "Failed to upload image.");
+      } finally {
+        this.uploadingImage = false;
+        event.target.value = null;
+      }
+    },
     async fetchPost() {
       this.loading = true;
       this.error = null;
@@ -232,9 +267,11 @@ export default {
       try {
         const res = await api.post(`/comments/post/${this.post.id}`, {
           content: this.newComment.trim(),
+          image: this.commentImage,
         });
         this.post.comments.push(res.data);
         this.newComment = '';
+        this.commentImage = null;
       } catch (err) {
         this.commentError = err.response?.data?.message || 'Failed to post reply.';
       } finally {

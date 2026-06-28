@@ -1,9 +1,7 @@
 const express = require("express");
 const router = express.Router();
-const { PrismaClient } = require("@prisma/client");
 const prisma = require("../utils/prisma");
 const authMiddleware = require("../middleware/auth.middleware");
-const { attempt } = require("../utils/prisma");
 
 router.get("/me", authMiddleware, async (req, res) => {
     try {
@@ -13,7 +11,15 @@ router.get("/me", authMiddleware, async (req, res) => {
                 attempts: {
                     orderBy: { startedAt: 'desc' },
                     take: 5,
-                    include: { quiz: true }
+                    include: { 
+                        quiz: {
+                            include: {
+                                _count: {
+                                    select: { questions: true }
+                                }
+                            }
+                        } 
+                    }
                 },
                 skills: {
                     include: { skill: true }

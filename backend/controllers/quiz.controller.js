@@ -1,41 +1,39 @@
-
 const prisma = require("../utils/prisma");
 
-
-const createQuiz = async (req, res) => { 
+const createQuiz = async (req, res) => {
     console.log("REQ.USER =", req.user);
 
     try {
-        const { quiz,questions } = req.body;
-        const { title, description } = quiz;
+        const { quiz, questions } = req.body;
+        const { title, description, thumbnail } = quiz || {};
 
-        if(!title) {
-            return res.status(400).json({ message: "Title is required"});
+        if (!title) {
+            return res.status(400).json({ message: "Title is required" });
         }
 
         const newQuiz = await prisma.quiz.create({
             data: {
                 title,
                 description,
+                thumbnail: thumbnail || null,
                 creatorId: req.user.id,
-                
                 questions: {
-                    create: questions
-                    .filter(q => q.text && q.text.trim() !== "")
-                    .map((q,index) => ({
-                        text:q.text,
-                        order:index + 1,
-
-                        options: {
-                            create: q.answers
-                            .filter(a => a.trim() !== "")
-                            .map((answer, i) => ({
-                                text: answer,
-                                isCorrect: q.correctIndex === i
-                            }))
-                        }
-                    }))
-                }
+                    create: (Array.isArray(questions) ? questions : [])
+                        .filter((q) => q.text && q.text.trim() !== "")
+                        .map((q, index) => ({
+                            text: q.text,
+                            order: index + 1,
+                            image: q.image || null,
+                            options: {
+                                create: (Array.isArray(q.answers) ? q.answers : [])
+                                    .filter((answer) => answer.trim() !== "")
+                                    .map((answer, i) => ({
+                                        text: answer,
+                                        isCorrect: q.correctIndex === i,
+                                    })),
+                            },
+                        })),
+                },
             },
         });
 
@@ -55,17 +53,22 @@ const getQuizById = async (req, res) => {
             include: {
                 questions: {
                     orderBy: { order: "asc" },
-                    include: {
+                    select: {
+                        id: true,
+                        text: true,
+                        order: true,
+                        image: true,
                         options: {
                             select: {
                                 id: true,
                                 text: true,
-                            }
-                        }
-                    }
-                }
-            }
+                            },
+                        },
+                    },
+                },
+            },
         });
+
         if (!quiz) {
             return res.status(404).json({ message: "Quiz not found" });
         }
@@ -92,11 +95,11 @@ const checkAnswer = async (req, res) => {
                     include: {
                         options: {
                             where: { isCorrect: true },
-                            select: { id: true}
-                        }
-                    }
-                }
-            }
+                            select: { id: true },
+                        },
+                    },
+                },
+            },
         });
 
         if (!option) {
@@ -105,11 +108,9 @@ const checkAnswer = async (req, res) => {
 
         const correctOptionId = option.question.options[0].id;
 
-        const isCorrect = option.isCorrect;
-
         res.status(200).json({
-            correct: isCorrect,
-            correctOptionId
+            correct: option.isCorrect,
+            correctOptionId,
         });
     } catch (error) {
         console.error(error);
@@ -117,14 +118,14 @@ const checkAnswer = async (req, res) => {
     }
 };
 
-const getAllQuizzes = async(req, res) => {
+const getAllQuizzes = async (req, res) => {
     try {
-
         const quizzes = await prisma.quiz.findMany({
             select: {
                 id: true,
                 title: true,
                 description: true,
+                thumbnail: true,
                 category: true,
                 difficulty: true,
                 createdAt: true,
@@ -132,19 +133,20 @@ const getAllQuizzes = async(req, res) => {
                     select: {
                         id: true,
                         email: true,
-                        username: true
-                    }
+                        username: true,
+                    },
                 },
                 _count: {
                     select: {
-                        questions: true
-                    }
-                }
+                        questions: true,
+                    },
+                },
             },
             orderBy: {
-                createdAt: "desc"
+                createdAt: "desc",
             },
         });
+
         res.status(200).json(quizzes);
     } catch (error) {
         console.error(error);
@@ -159,13 +161,13 @@ const useSkill = async (req, res) => {
 
         const question = await prisma.question.findUnique({
             where: { id: Number(questionId) },
-            include: { options: true }
+            include: { options: true },
         });
 
         if (!question) return res.status(404).json({ message: "Question not found" });
 
-        const correctOption = question.options.find(o => o.isCorrect);
-        const incorrectOptions = question.options.filter(o => !o.isCorrect);
+        const correctOption = question.options.find((o) => o.isCorrect);
+        const incorrectOptions = question.options.filter((o) => !o.isCorrect);
 
         let data = {};
 
@@ -191,5 +193,5 @@ module.exports = {
     getQuizById,
     getAllQuizzes,
     checkAnswer,
-    useSkill
+    useSkill,
 };

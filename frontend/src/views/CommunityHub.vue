@@ -110,6 +110,9 @@
               </div>
               <h4 class="post-title">{{ post.title }}</h4>
               <p class="post-excerpt">{{ post.content }}</p>
+              <div v-if="post.image" class="post-image-indicator" style="margin-top: 4px; display: flex; align-items: center; gap: 4px;">
+                <span class="material-symbols-outlined" style="font-size: 16px; color: #4231cf;">image</span> <span style="font-size: 12px; font-weight: 600; color: #4231cf;">Attachment</span>
+              </div>
               <div class="post-footer">
                 <div class="post-author">
                   <div class="author-avatar-small">{{ (post.author.username || 'U').charAt(0).toUpperCase() }}</div>

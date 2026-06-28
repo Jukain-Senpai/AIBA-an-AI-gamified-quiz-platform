@@ -2,8 +2,8 @@ const prisma = require("../utils/prisma");
 
 const createPost = async (req, res) => {
     try {
-        const { title, content, category, tags } = req.body;
-        
+        const { title, content, category, tags, image } = req.body;
+
         if (!title || !content) {
             return res.status(400).json({ message: "Title and content are required" });
         }
@@ -12,15 +12,16 @@ const createPost = async (req, res) => {
             data: {
                 title,
                 content,
+                image: image || null,
                 category,
                 tags: tags || [],
-                authorId: req.user.id
+                authorId: req.user.id,
             },
             include: {
                 author: {
-                    select: { id: true, username: true, avatar: true, title: true }
-                }
-            }
+                    select: { id: true, username: true, avatar: true, title: true },
+                },
+            },
         });
 
         res.status(201).json(newPost);
@@ -34,14 +35,14 @@ const getAllPosts = async (req, res) => {
     try {
         const { category, search } = req.query;
         let where = {};
-        
+
         if (category) {
             where.category = category;
         }
         if (search) {
             where.OR = [
                 { title: { contains: search, mode: "insensitive" } },
-                { content: { contains: search, mode: "insensitive" } }
+                { content: { contains: search, mode: "insensitive" } },
             ];
         }
 
@@ -49,15 +50,15 @@ const getAllPosts = async (req, res) => {
             where,
             include: {
                 author: {
-                    select: { id: true, username: true, avatar: true, title: true }
+                    select: { id: true, username: true, avatar: true, title: true },
                 },
                 _count: {
-                    select: { comments: true }
-                }
+                    select: { comments: true },
+                },
             },
             orderBy: {
-                createdAt: "desc"
-            }
+                createdAt: "desc",
+            },
         });
 
         res.status(200).json(posts);
@@ -75,22 +76,22 @@ const getPostById = async (req, res) => {
             where: { id: Number(id) },
             include: {
                 author: {
-                    select: { id: true, username: true, avatar: true, title: true }
+                    select: { id: true, username: true, avatar: true, title: true },
                 },
                 comments: {
                     include: {
                         author: {
-                            select: { id: true, username: true, avatar: true, title: true }
-                        }
+                            select: { id: true, username: true, avatar: true, title: true },
+                        },
                     },
                     orderBy: {
-                        createdAt: "asc"
-                    }
+                        createdAt: "asc",
+                    },
                 },
                 _count: {
-                    select: { postLikes: true }
-                }
-            }
+                    select: { postLikes: true },
+                },
+            },
         });
 
         if (!post) {
@@ -114,32 +115,30 @@ const toggleUpvotePost = async (req, res) => {
             where: {
                 userId_postId: {
                     userId,
-                    postId
-                }
-            }
+                    postId,
+                },
+            },
         });
 
         if (existingLike) {
-            // Remove upvote
             await prisma.postLike.delete({
-                where: { id: existingLike.id }
+                where: { id: existingLike.id },
             });
             await prisma.post.update({
                 where: { id: postId },
-                data: { upvotes: { decrement: 1 } }
+                data: { upvotes: { decrement: 1 } },
             });
             return res.status(200).json({ message: "Upvote removed", liked: false });
-        } else {
-            // Add upvote
-            await prisma.postLike.create({
-                data: { userId, postId }
-            });
-            await prisma.post.update({
-                where: { id: postId },
-                data: { upvotes: { increment: 1 } }
-            });
-            return res.status(200).json({ message: "Upvoted", liked: true });
         }
+
+        await prisma.postLike.create({
+            data: { userId, postId },
+        });
+        await prisma.post.update({
+            where: { id: postId },
+            data: { upvotes: { increment: 1 } },
+        });
+        return res.status(200).json({ message: "Upvoted", liked: true });
     } catch (error) {
         console.error(error);
         res.status(500).json({ message: "Failed to toggle upvote" });
@@ -172,5 +171,5 @@ module.exports = {
     getAllPosts,
     getPostById,
     toggleUpvotePost,
-    deletePost
+    deletePost,
 };

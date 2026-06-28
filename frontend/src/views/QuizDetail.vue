@@ -47,6 +47,9 @@
         <article class="question-card">
           <span class="question-kicker">Current Question</span>
           <h2 class="question-text">{{ currentQuestion.text }}</h2>
+          <div v-if="currentQuestion.image" style="margin-top: 16px; text-align: center;">
+            <img :src="resolveImageUrl(currentQuestion.image)" alt="Question Image" style="max-height: 250px; max-width: 100%; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);" />
+          </div>
         </article>
 
         <aside class="timer-card" aria-label="Timer placeholder">
@@ -191,6 +194,12 @@ export default {
   },
 
   methods: {
+    resolveImageUrl(path) {
+      if (!path) return '';
+      if (path.startsWith('http') || path.startsWith('data:')) return path;
+      return `http://localhost:5000${path.startsWith('/') ? '' : '/'}${path}`;
+    },
+
     async loadQuizData() {
       this.loading = true;
       this.error = null;

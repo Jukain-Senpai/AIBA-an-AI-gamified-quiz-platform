@@ -73,7 +73,7 @@
             class="quiz-card"
           >
             <!-- Thumbnail Placeholder -->
-            <div class="card-thumbnail">
+            <div class="card-thumbnail" :style="quiz.thumbnail ? { backgroundImage: `url(${getImageUrl(quiz.thumbnail)})`, backgroundSize: 'cover', backgroundPosition: 'center' } : {}">
               <span class="cat-badge" :style="getCatBadgeStyle(quiz.category)">
                 {{ getCatEmoji(quiz.category) }} {{ quiz.category || 'General' }}
               </span>
@@ -135,7 +135,7 @@
 </template>
 
 <script>
-import api from '../services/api';
+import api, { getImageUrl } from '../services/api';
 
 export default {
   name: 'QuizList',
@@ -192,6 +192,7 @@ export default {
   },
 
   methods: {
+    getImageUrl,
     async fetchQuizzes() {
       this.loading = true;
       this.error = null;

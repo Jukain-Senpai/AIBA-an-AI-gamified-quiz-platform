@@ -12,4 +12,24 @@ api.interceptors.request.use((config) => {
     return config;
 });
 
+export const getImageUrl = (path) => {
+    if (!path) return '';
+    if (path.startsWith('http') || path.startsWith('data:')) return path;
+    const baseUrl = 'http://localhost:5000';
+    return `${baseUrl}${path.startsWith('/') ? '' : '/'}${path}`;
+};
+
+export const uploadImage = async (file, scope = 'general') => {
+    const formData = new FormData();
+    formData.append('scope', scope); // Must be appended before file for multer
+    formData.append('image', file);
+
+    const response = await api.post(`/uploads/image?scope=${encodeURIComponent(scope)}`, formData, {
+        headers: {
+            'Content-Type': 'multipart/form-data',
+        },
+    });
+    return response.data;
+};
+
 export default api;

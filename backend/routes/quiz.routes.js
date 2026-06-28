@@ -33,6 +33,8 @@ const attemptRoutes = require("./attempt.routes");
  *                 type: string
  *               description:
  *                 type: string
+ *               thumbnail:
+ *                 type: string
  *     responses:
  *       201:
  *         description: Quiz created
@@ -40,6 +42,25 @@ const attemptRoutes = require("./attempt.routes");
  *         description: Unauthorized
  */
 router.post("/", protect, createQuiz);
+
+/**
+ * @swagger
+ * /api/quizzes:
+ *   get:
+ *     summary: Get all quizzes
+ *     tags: [Quiz]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: List of quizzes
+ */
+router.get("/", protect, getAllQuizzes);
+
+// Critical fix: Put specific endpoints before /:quizId
+router.post("/check-answer", protect, checkAnswer);
+router.post("/use-skill/:questionId", protect, useSkill);
+
 /**
  * @swagger
  * /api/quizzes/{quizId}:
@@ -60,25 +81,8 @@ router.post("/", protect, createQuiz);
  *       404:
  *         description: Quiz not found
  */
-
-router.get("/", protect, getAllQuizzes);
-/**
- * @swagger
- * /api/quizzes:
- *   get:
- *     summary: Get all quizzes
- *     tags: [Quiz]
- *     security:
- *       - bearerAuth: []
- *     responses:
- *       200:
- *         description: List of quizzes
- */
-
 router.get("/:quizId", protect, getQuizById);
 
-router.post("/check-answer", protect, checkAnswer);
-router.post("/use-skill/:questionId", protect, useSkill);
 /**
  * @swagger
  * /api/quizzes/check-answer:
