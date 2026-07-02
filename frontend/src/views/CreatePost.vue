@@ -237,6 +237,9 @@ export default {
           category: this.form.category || 'General',
           tags: this.form.tags,
         });
+        if (res.data.moderationStatus === "PENDING") {
+          alert("Your post is pending moderation review.");
+        }
         this.$router.push(`/forum/post/${res.data.id}`);
       } catch (err) {
         if (err.response?.status === 401) {

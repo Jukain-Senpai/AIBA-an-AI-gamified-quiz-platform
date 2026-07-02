@@ -150,6 +150,9 @@
               <time class="post-time">{{ formatTime(comment.createdAt) }}</time>
             </div>
 
+            <div v-if="comment.moderationStatus && comment.moderationStatus !== 'APPROVED'" class="comment-status-badge" :class="comment.moderationStatus.toLowerCase()">
+              {{ comment.moderationStatus }} Review
+            </div>
             <p class="comment-content">{{ comment.content }}</p>
             <div v-if="comment.image" class="comment-image-container" style="margin-top: 10px; margin-bottom: 12px;">
               <img :src="getImageUrl(comment.image)" alt="Reply Attachment" style="max-height: 200px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.08);" />
@@ -272,6 +275,9 @@ export default {
           image: this.commentImage,
         });
         this.post.comments.push(res.data);
+        if (res.data.moderationStatus === "PENDING") {
+          alert("Your comment is pending moderation review.");
+        }
         this.newComment = '';
         this.commentImage = null;
       } catch (err) {
@@ -737,6 +743,26 @@ export default {
   font-size: 15px;
   line-height: 1.65;
   color: #464555;
+}
+
+.comment-status-badge {
+  display: inline-flex;
+  align-items: center;
+  margin: 8px 0 10px;
+  padding: 2px 8px;
+  border-radius: 9999px;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.comment-status-badge.pending {
+  background: #fff1c7;
+  color: #6b4b00;
+}
+
+.comment-status-badge.rejected {
+  background: #ffdad6;
+  color: #ba1a1a;
 }
 
 .comment-actions {

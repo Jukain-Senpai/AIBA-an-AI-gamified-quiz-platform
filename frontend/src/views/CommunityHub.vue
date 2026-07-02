@@ -109,6 +109,9 @@
                 </div>
               </div>
               <h4 class="post-title">{{ post.title }}</h4>
+              <span v-if="post.moderationStatus && post.moderationStatus !== 'APPROVED'" class="post-status-badge" :class="post.moderationStatus.toLowerCase()">
+                {{ post.moderationStatus }} Review
+              </span>
               <p class="post-excerpt">{{ post.content }}</p>
               <div v-if="post.image" class="post-image-indicator" style="margin-top: 4px; display: flex; align-items: center; gap: 4px;">
                 <span class="material-symbols-outlined" style="font-size: 16px; color: #4231cf;">image</span> <span style="font-size: 12px; font-weight: 600; color: #4231cf;">Attachment</span>
@@ -614,6 +617,27 @@ export default {
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
+}
+
+.post-status-badge {
+  display: inline-flex;
+  align-items: center;
+  margin: 6px 0 0;
+  padding: 2px 8px;
+  border-radius: 9999px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0;
+}
+
+.post-status-badge.pending {
+  background: #fff1c7;
+  color: #6b4b00;
+}
+
+.post-status-badge.rejected {
+  background: #ffdad6;
+  color: #ba1a1a;
 }
 
 .post-card:hover .post-title {

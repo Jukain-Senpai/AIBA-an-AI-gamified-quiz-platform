@@ -555,11 +555,14 @@ export default {
         if (!res.ok) {
           throw new Error(data.message || "Failed to save quiz");
         }
+        const isPending = data.moderationStatus === "PENDING";
         alert(isEdit
-          ? "Quiz updated successfully."
-          : (this.visibility === "Public"
-            ? "Congratulations! Your quiz is now live!"
-            : "Your quiz has been saved as private."));
+          ? (isPending ? "Quiz updated and sent to moderation review." : "Quiz updated successfully.")
+          : (isPending
+            ? "Your quiz is pending moderation review."
+            : (this.visibility === "Public"
+              ? "Congratulations! Your quiz is now live!"
+              : "Your quiz has been saved as private.")));
         this.$router.push("/quizzes");
       } catch (err) {
         console.error(err);

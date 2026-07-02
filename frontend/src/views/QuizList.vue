@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="quiz-list-wrapper">
     <!-- Cosmic Background -->
     <div class="bg-decoration">
@@ -10,7 +10,7 @@
 
       <!-- ── Page Header ── -->
       <section class="page-header">
-        <h1 class="page-title">Explore Quizzes 🔍</h1>
+        <h1 class="page-title">Explore Quizzes</h1>
         <router-link to="/create-quiz" class="create-btn">
           <img src="/src/assets/icons/ui/add.svg" class="btn-icon-sm" alt="" />
           Create Quiz
@@ -75,7 +75,7 @@
             <!-- Thumbnail Placeholder -->
             <div class="card-thumbnail" :style="quiz.thumbnail ? { backgroundImage: `url(${getImageUrl(quiz.thumbnail)})`, backgroundSize: 'cover', backgroundPosition: 'center' } : {}">
               <span class="cat-badge" :style="getCatBadgeStyle(quiz.category)">
-                {{ getCatEmoji(quiz.category) }} {{ quiz.category || 'General' }}
+                {{ quiz.category || 'General' }}
               </span>
               <span class="diff-badge" :class="getDiffClass(quiz.difficulty)">
                 {{ quiz.difficulty || 'Easy' }}
@@ -106,6 +106,9 @@
                   </div>
                 </div>
               </div>
+              <span v-if="quiz.moderationStatus && quiz.moderationStatus !== 'APPROVED'" class="mod-badge" :class="quiz.moderationStatus.toLowerCase()">
+                {{ quiz.moderationStatus }} Review
+              </span>
 
               <p class="card-creator">
                 by <span class="creator-name">{{ getCreatorName(quiz.creator) }}</span>
@@ -140,7 +143,7 @@
         <!-- Load More -->
         <div v-if="filteredQuizzes.length > displayCount" class="load-more-wrapper">
           <button class="load-more-btn" @click="loadMore">
-            Show More Quests
+            Show More Quizzes
             <img src="/src/assets/icons/navigation/keyboard-arrow-down.svg" class="arrow-down-icon" alt="" />
           </button>
         </div>
@@ -302,17 +305,8 @@ export default {
       const map = { Easy: 'diff-easy', Medium: 'diff-medium', Hard: 'diff-hard' };
       return map[difficulty] || 'diff-easy';
     },
-
-    getCatEmoji(category) {
-      const map = {
-        General: '🌐', Science: '🧪', Math: '➗', History: '🏛️',
-        Language: '🗣️', 'Pop Culture': '🍿', Tech: '💻',
-        Teaching: '📚', Homework: '📝', 'Self Study': '📖', Other: '🌀',
-      };
-      return map[category] || '🌐';
-    },
-
     getCatBadgeStyle(category) {
+
       const map = {
         Science:      'background: rgba(0,118,87,0.85); color: #77ffcc;',
         Math:         'background: rgba(125,88,0,0.85); color: #ffdea9;',
@@ -688,6 +682,30 @@ export default {
   max-width: 65%;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.mod-badge {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  margin: 0 0 10px;
+  padding: 5px 10px;
+  border-radius: 9999px;
+  font-family: 'Nunito Sans', sans-serif;
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.mod-badge.pending {
+  background: #fff1c7;
+  color: #6b4b00;
+}
+
+.mod-badge.rejected {
+  background: #ffdad6;
+  color: #ba1a1a;
 }
 
 .diff-badge {

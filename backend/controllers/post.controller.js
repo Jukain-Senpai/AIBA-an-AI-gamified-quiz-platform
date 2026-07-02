@@ -1,5 +1,6 @@
 const prisma = require("../utils/prisma");
-const { canManageContent } = require("../utils/access");
+const { canManageContent, canAccessPost, isAdminRole } = require("../utils/access");
+const { detectProhibitedLanguage, moderateContent } = require("../services/moderation.service");
 
 const createPost = async (req, res) => {
     try {
@@ -9,6 +10,19 @@ const createPost = async (req, res) => {
             return res.status(400).json({ message: "Title and content are required" });
         }
 
+        const moderationPayload = {
+            title,
+            content,
+            category: category || "General",
+            tags: tags || [],
+        };
+        const profanityCheck = detectProhibitedLanguage(moderationPayload);
+        if (profanityCheck.blocked) {
+            return res.status(400).json({ message: profanityCheck.reason });
+        }
+
+        const moderation = await moderateContent("post", moderationPayload);
+
         const newPost = await prisma.post.create({
             data: {
                 title,
@@ -16,6 +30,9 @@ const createPost = async (req, res) => {
                 image: image || null,
                 category,
                 tags: tags || [],
+                moderationStatus: moderation.flagged ? "PENDING" : "APPROVED",
+                moderationReason: moderation.reason || null,
+                moderatedAt: new Date(),
                 authorId: req.user.id,
             },
             include: {
@@ -48,8 +65,32 @@ const getAllPosts = async (req, res) => {
         }
 
         const posts = await prisma.post.findMany({
-            where,
-            include: {
+            where: isAdminRole(req.user?.role)
+                ? where
+                : {
+                    AND: [
+                        where,
+                        {
+                            OR: [
+                                { moderationStatus: "APPROVED" },
+                                { authorId: req.user.id },
+                            ],
+                        },
+                    ],
+                },
+            select: {
+                id: true,
+                title: true,
+                content: true,
+                image: true,
+                category: true,
+                tags: true,
+                upvotes: true,
+                createdAt: true,
+                updatedAt: true,
+                moderationStatus: true,
+                moderationReason: true,
+                moderatedAt: true,
                 author: {
                     select: { id: true, username: true, avatar: true, title: true },
                 },
@@ -73,13 +114,35 @@ const getPostById = async (req, res) => {
     try {
         const { id } = req.params;
 
+        const isAdmin = isAdminRole(req.user?.role);
         const post = await prisma.post.findUnique({
             where: { id: Number(id) },
-            include: {
+            select: {
+                id: true,
+                title: true,
+                content: true,
+                image: true,
+                category: true,
+                tags: true,
+                upvotes: true,
+                createdAt: true,
+                updatedAt: true,
+                moderationStatus: true,
+                moderationReason: true,
+                moderatedAt: true,
+                authorId: true,
                 author: {
                     select: { id: true, username: true, avatar: true, title: true },
                 },
                 comments: {
+                    where: isAdmin
+                        ? {}
+                        : {
+                            OR: [
+                                { moderationStatus: "APPROVED" },
+                                { authorId: req.user.id },
+                            ],
+                        },
                     include: {
                         author: {
                             select: { id: true, username: true, avatar: true, title: true },
@@ -99,6 +162,10 @@ const getPostById = async (req, res) => {
             return res.status(404).json({ message: "Post not found" });
         }
 
+        if (!canAccessPost(req.user, post)) {
+            return res.status(403).json({ message: "This post is not available" });
+        }
+
         res.status(200).json(post);
     } catch (error) {
         console.error(error);
@@ -111,6 +178,23 @@ const toggleUpvotePost = async (req, res) => {
         const { id } = req.params;
         const userId = req.user.id;
         const postId = Number(id);
+
+        const post = await prisma.post.findUnique({
+            where: { id: postId },
+            select: {
+                id: true,
+                authorId: true,
+                moderationStatus: true,
+            },
+        });
+
+        if (!post) {
+            return res.status(404).json({ message: "Post not found" });
+        }
+
+        if (!canAccessPost(req.user, post)) {
+            return res.status(403).json({ message: "This post is not available" });
+        }
 
         const existingLike = await prisma.postLike.findUnique({
             where: {

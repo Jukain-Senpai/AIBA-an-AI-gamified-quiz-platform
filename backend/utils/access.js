@@ -13,20 +13,46 @@ const isSameUser = (userId, ownerId) => {
     return Number(userId) === Number(ownerId);
 };
 
+const normalizeModerationStatus = (status) => {
+    if (typeof status !== "string") return "approved";
+    return status.trim().toLowerCase();
+};
+
+const isApprovedModerationStatus = (status) => {
+    return normalizeModerationStatus(status) === "approved";
+};
+
 const canManageContent = (user, ownerId) => {
     return isSameUser(user?.id, ownerId) || isAdminRole(user?.role);
 };
 
 const canAccessQuiz = (user, quiz) => {
     if (!quiz) return false;
-    if (quiz.isPublished) return true;
-    return canManageContent(user, quiz.creatorId);
+    if (canManageContent(user, quiz.creatorId)) return true;
+    if (quiz.isPublished && isApprovedModerationStatus(quiz.moderationStatus)) return true;
+    return false;
+};
+
+const canAccessPost = (user, post) => {
+    if (!post) return false;
+    if (canManageContent(user, post.authorId)) return true;
+    return isApprovedModerationStatus(post.moderationStatus);
+};
+
+const canAccessComment = (user, comment) => {
+    if (!comment) return false;
+    if (canManageContent(user, comment.authorId)) return true;
+    return isApprovedModerationStatus(comment.moderationStatus);
 };
 
 module.exports = {
     normalizeRole,
     isAdminRole,
     isSameUser,
+    normalizeModerationStatus,
+    isApprovedModerationStatus,
     canManageContent,
     canAccessQuiz,
+    canAccessPost,
+    canAccessComment,
 };

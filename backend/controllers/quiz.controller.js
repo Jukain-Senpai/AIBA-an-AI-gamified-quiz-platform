@@ -1,5 +1,19 @@
 const prisma = require("../utils/prisma");
 const { canAccessQuiz, canManageContent, isAdminRole } = require("../utils/access");
+const { detectProhibitedLanguage, moderateContent } = require("../services/moderation.service");
+
+const buildQuizModerationPayload = (quiz, questions) => ({
+    title: quiz?.title || "",
+    description: quiz?.description || "",
+    category: quiz?.category || "General",
+    difficulty: quiz?.difficulty || "Easy",
+    questions: Array.isArray(questions)
+        ? questions.map((question) => ({
+            text: question?.text || "",
+            answers: Array.isArray(question?.answers) ? question.answers : [],
+        }))
+        : [],
+});
 
 const createQuiz = async (req, res) => {
     try {
@@ -16,6 +30,14 @@ const createQuiz = async (req, res) => {
                 : visibility === "Private"
                     ? false
                     : true;
+        const moderationPayload = buildQuizModerationPayload(quiz, questions);
+        const profanityCheck = detectProhibitedLanguage(moderationPayload);
+        if (profanityCheck.blocked) {
+            return res.status(400).json({ message: profanityCheck.reason });
+        }
+
+        const moderation = await moderateContent("quiz", moderationPayload);
+        const moderationStatus = moderation.flagged ? "PENDING" : "APPROVED";
 
         const newQuiz = await prisma.quiz.create({
             data: {
@@ -23,6 +45,9 @@ const createQuiz = async (req, res) => {
                 description,
                 thumbnail: thumbnail || null,
                 isPublished: publishedState,
+                moderationStatus,
+                moderationReason: moderation.reason || null,
+                moderatedAt: new Date(),
                 creatorId: req.user.id,
                 questions: {
                     create: (Array.isArray(questions) ? questions : [])
@@ -83,6 +108,14 @@ const updateQuiz = async (req, res) => {
                 : visibility === "Private"
                     ? false
                     : true;
+        const moderationPayload = buildQuizModerationPayload(quiz, questions);
+        const profanityCheck = detectProhibitedLanguage(moderationPayload);
+        if (profanityCheck.blocked) {
+            return res.status(400).json({ message: profanityCheck.reason });
+        }
+
+        const moderation = await moderateContent("quiz", moderationPayload);
+        const moderationStatus = moderation.flagged ? "PENDING" : "APPROVED";
 
         const normalizedQuestions = (Array.isArray(questions) ? questions : [])
             .filter((q) => q.text && q.text.trim() !== "")
@@ -132,6 +165,9 @@ const updateQuiz = async (req, res) => {
                     description,
                     thumbnail: thumbnail || null,
                     isPublished: publishedState,
+                    moderationStatus,
+                    moderationReason: moderation.reason || null,
+                    moderatedAt: new Date(),
                     questions: {
                         create: normalizedQuestions,
                     },
@@ -167,7 +203,18 @@ const getQuizById = async (req, res) => {
 
         const quiz = await prisma.quiz.findUnique({
             where: { id: Number(quizId) },
-            include: {
+            select: {
+                id: true,
+                title: true,
+                description: true,
+                thumbnail: true,
+                category: true,
+                difficulty: true,
+                isPublished: true,
+                moderationStatus: true,
+                moderationReason: true,
+                moderatedAt: true,
+                creatorId: true,
                 creator: {
                     select: {
                         id: true,
@@ -271,6 +318,9 @@ const getAllQuizzes = async (req, res) => {
             category: true,
             difficulty: true,
             isPublished: true,
+            moderationStatus: true,
+            moderationReason: true,
+            moderatedAt: true,
             createdAt: true,
             creator: {
                 select: {
@@ -291,7 +341,7 @@ const getAllQuizzes = async (req, res) => {
                 ? {}
                 : {
                     OR: [
-                        { isPublished: true },
+                        { isPublished: true, moderationStatus: "APPROVED" },
                         { creatorId: req.user.id },
                     ],
                 },

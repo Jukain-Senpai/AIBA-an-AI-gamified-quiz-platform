@@ -68,6 +68,9 @@ model Quiz {
   difficulty  String   @default("Easy")
   category    String   @default("General")
   isPublished Boolean  @default(false)
+  moderationStatus ModerationStatus @default(APPROVED)
+  moderationReason String?
+  moderatedAt DateTime?
   createdAt   DateTime @default(now())
 
   creatorId Int
@@ -129,6 +132,12 @@ enum Role {
   ADMIN
 }
 
+enum ModerationStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
 model Post {
   id          Int       @id @default(autoincrement())
   title       String
@@ -137,6 +146,9 @@ model Post {
   category    String?
   tags        String[]
   upvotes     Int       @default(0)
+  moderationStatus ModerationStatus @default(APPROVED)
+  moderationReason String?
+  moderatedAt DateTime?
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
@@ -152,6 +164,9 @@ model Comment {
   content     String
   image       String?
   upvotes     Int       @default(0)
+  moderationStatus ModerationStatus @default(APPROVED)
+  moderationReason String?
+  moderatedAt DateTime?
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 

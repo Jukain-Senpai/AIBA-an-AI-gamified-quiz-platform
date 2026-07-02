@@ -1,0 +1,21 @@
+DO $$
+BEGIN
+    CREATE TYPE "ModerationStatus" AS ENUM ('PENDING', 'APPROVED', 'REJECTED');
+EXCEPTION
+    WHEN duplicate_object THEN NULL;
+END $$;
+
+ALTER TABLE "Quiz"
+ADD COLUMN IF NOT EXISTS "moderationStatus" "ModerationStatus" NOT NULL DEFAULT 'APPROVED',
+ADD COLUMN IF NOT EXISTS "moderationReason" TEXT,
+ADD COLUMN IF NOT EXISTS "moderatedAt" TIMESTAMP(3);
+
+ALTER TABLE "Post"
+ADD COLUMN IF NOT EXISTS "moderationStatus" "ModerationStatus" NOT NULL DEFAULT 'APPROVED',
+ADD COLUMN IF NOT EXISTS "moderationReason" TEXT,
+ADD COLUMN IF NOT EXISTS "moderatedAt" TIMESTAMP(3);
+
+ALTER TABLE "Comment"
+ADD COLUMN IF NOT EXISTS "moderationStatus" "ModerationStatus" NOT NULL DEFAULT 'APPROVED',
+ADD COLUMN IF NOT EXISTS "moderationReason" TEXT,
+ADD COLUMN IF NOT EXISTS "moderatedAt" TIMESTAMP(3);

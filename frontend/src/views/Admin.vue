@@ -67,29 +67,55 @@
           </div>
 
           <div class="item-body">
-            <div class="item-topline">
-              <div>
-                <p class="item-title">{{ quiz.title }}</p>
-                <p class="item-meta">
-                  by {{ getAuthorLabel(quiz.creator) }} · {{ quiz._count.questions }} questions
-                </p>
+              <div class="item-topline">
+                <div>
+                  <p class="item-title">{{ quiz.title }}</p>
+                  <p class="item-meta">
+                    by {{ getAuthorLabel(quiz.creator) }} · {{ quiz._count.questions }} questions
+                  </p>
+                </div>
+              <div class="pill-stack">
+                <span class="status-pill" :class="quiz.isPublished ? 'public' : 'private'">
+                  {{ quiz.isPublished ? 'Public' : 'Private' }}
+                </span>
+                <span class="status-pill moderation" :class="quiz.moderationStatus?.toLowerCase()">
+                  {{ quiz.moderationStatus || 'APPROVED' }}
+                </span>
               </div>
-              <span class="status-pill" :class="quiz.isPublished ? 'public' : 'private'">
-                {{ quiz.isPublished ? 'Public' : 'Private' }}
-              </span>
-            </div>
+              </div>
 
             <p class="item-description">{{ quiz.description || 'No description provided.' }}</p>
+            <p v-if="quiz.moderationReason" class="moderation-note">{{ quiz.moderationReason }}</p>
 
             <div class="item-footer">
               <div class="tag-row">
                 <span class="tag">{{ quiz.category || 'General' }}</span>
                 <span class="tag">{{ quiz.difficulty || 'Easy' }}</span>
               </div>
-              <button class="danger-btn" type="button" @click="deleteItem('quiz', quiz.id)">
-                <span class="material-symbols-outlined">delete</span>
-                Delete
-              </button>
+              <div class="action-row">
+                <button
+                  v-if="quiz.moderationStatus === 'PENDING'"
+                  class="success-btn"
+                  type="button"
+                  @click="moderateItem('quiz', quiz.id, 'APPROVED')"
+                >
+                  <span class="material-symbols-outlined">check</span>
+                  Approve
+                </button>
+                <button
+                  v-if="quiz.moderationStatus === 'PENDING'"
+                  class="neutral-btn"
+                  type="button"
+                  @click="moderateItem('quiz', quiz.id, 'REJECTED')"
+                >
+                  <span class="material-symbols-outlined">close</span>
+                  Reject
+                </button>
+                <button class="danger-btn" type="button" @click="deleteItem('quiz', quiz.id)">
+                  <span class="material-symbols-outlined">delete</span>
+                  Delete
+                </button>
+              </div>
             </div>
           </div>
         </article>
@@ -104,27 +130,53 @@
           </div>
 
           <div class="item-body">
-            <div class="item-topline">
-              <div>
-                <p class="item-title">{{ post.title }}</p>
-                <p class="item-meta">
-                  by {{ getAuthorLabel(post.author) }} · {{ post._count.comments }} comments · {{ post.upvotes }} upvotes
-                </p>
+              <div class="item-topline">
+                <div>
+                  <p class="item-title">{{ post.title }}</p>
+                  <p class="item-meta">
+                    by {{ getAuthorLabel(post.author) }} · {{ post._count.comments }} comments · {{ post.upvotes }} upvotes
+                  </p>
+                </div>
+              <div class="pill-stack">
+                <span class="status-pill soft">Forum</span>
+                <span class="status-pill moderation" :class="post.moderationStatus?.toLowerCase()">
+                  {{ post.moderationStatus || 'APPROVED' }}
+                </span>
               </div>
-              <span class="status-pill soft">Forum</span>
-            </div>
+              </div>
 
             <p class="item-description">{{ post.content }}</p>
+            <p v-if="post.moderationReason" class="moderation-note">{{ post.moderationReason }}</p>
 
             <div class="item-footer">
               <div class="tag-row">
                 <span class="tag">{{ post.category || 'General' }}</span>
                 <span v-for="tag in (post.tags || []).slice(0, 2)" :key="tag" class="tag">{{ tag }}</span>
               </div>
-              <button class="danger-btn" type="button" @click="deleteItem('post', post.id)">
-                <span class="material-symbols-outlined">delete</span>
-                Delete
-              </button>
+              <div class="action-row">
+                <button
+                  v-if="post.moderationStatus === 'PENDING'"
+                  class="success-btn"
+                  type="button"
+                  @click="moderateItem('post', post.id, 'APPROVED')"
+                >
+                  <span class="material-symbols-outlined">check</span>
+                  Approve
+                </button>
+                <button
+                  v-if="post.moderationStatus === 'PENDING'"
+                  class="neutral-btn"
+                  type="button"
+                  @click="moderateItem('post', post.id, 'REJECTED')"
+                >
+                  <span class="material-symbols-outlined">close</span>
+                  Reject
+                </button>
+                <button class="danger-btn" type="button" @click="deleteItem('post', post.id)">
+                  <span class="material-symbols-outlined">delete</span>
+                  Delete
+                </button>
+              </div>
             </div>
           </div>
         </article>
@@ -137,15 +189,21 @@
           </div>
 
           <div class="item-body">
-            <div class="item-topline">
-              <div>
-                <p class="item-title">{{ getAuthorLabel(comment.author) }}</p>
-                <p class="item-meta">On {{ comment.post?.title || 'Unknown post' }} · {{ comment.upvotes }} upvotes</p>
+              <div class="item-topline">
+                <div>
+                  <p class="item-title">{{ getAuthorLabel(comment.author) }}</p>
+                  <p class="item-meta">On {{ comment.post?.title || 'Unknown post' }} · {{ comment.upvotes }} upvotes</p>
+                </div>
+              <div class="pill-stack">
+                <span class="status-pill soft">Comment</span>
+                <span class="status-pill moderation" :class="comment.moderationStatus?.toLowerCase()">
+                  {{ comment.moderationStatus || 'APPROVED' }}
+                </span>
               </div>
-              <span class="status-pill soft">Comment</span>
-            </div>
+              </div>
 
             <p class="item-description">{{ comment.content }}</p>
+            <p v-if="comment.moderationReason" class="moderation-note">{{ comment.moderationReason }}</p>
 
             <div v-if="comment.image" class="inline-preview">
               <img :src="getImageUrl(comment.image)" alt="Comment image" />
@@ -155,10 +213,30 @@
               <div class="tag-row">
                 <span class="tag">Post #{{ comment.post?.id || 'N/A' }}</span>
               </div>
-              <button class="danger-btn" type="button" @click="deleteItem('comment', comment.id)">
-                <span class="material-symbols-outlined">delete</span>
-                Delete
-              </button>
+              <div class="action-row">
+                <button
+                  v-if="comment.moderationStatus === 'PENDING'"
+                  class="success-btn"
+                  type="button"
+                  @click="moderateItem('comment', comment.id, 'APPROVED')"
+                >
+                  <span class="material-symbols-outlined">check</span>
+                  Approve
+                </button>
+                <button
+                  v-if="comment.moderationStatus === 'PENDING'"
+                  class="neutral-btn"
+                  type="button"
+                  @click="moderateItem('comment', comment.id, 'REJECTED')"
+                >
+                  <span class="material-symbols-outlined">close</span>
+                  Reject
+                </button>
+                <button class="danger-btn" type="button" @click="deleteItem('comment', comment.id)">
+                  <span class="material-symbols-outlined">delete</span>
+                  Delete
+                </button>
+              </div>
             </div>
           </div>
         </article>
@@ -256,6 +334,17 @@ export default {
         await this.fetchAdminContent();
       } catch (err) {
         alert(err.response?.data?.message || `Failed to delete ${labels[type]}`);
+        console.error(err);
+      }
+    },
+    async moderateItem(type, id, moderationStatus) {
+      try {
+        await api.patch(`/admin/content/${type}/${id}`, {
+          moderationStatus,
+        });
+        await this.fetchAdminContent();
+      } catch (err) {
+        alert(err.response?.data?.message || "Failed to update moderation status");
         console.error(err);
       }
     },
@@ -468,6 +557,14 @@ export default {
   gap: 12px;
 }
 
+.pill-stack {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
 .item-title {
   margin: 0;
   font-size: 18px;
@@ -532,6 +629,72 @@ export default {
 .status-pill.soft {
   background: #f5f2ff;
   color: #464555;
+}
+
+.status-pill.moderation.pending {
+  background: #fff1c7;
+  color: #6b4b00;
+}
+
+.status-pill.moderation.approved {
+  background: #d9fff0;
+  color: #007657;
+}
+
+.status-pill.moderation.rejected {
+  background: #ffdad6;
+  color: #ba1a1a;
+}
+
+.moderation-note {
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: #f5f2ff;
+  color: #464555;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.action-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.success-btn,
+.neutral-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 40px;
+  padding: 0 14px;
+  border-radius: 8px;
+  font-family: "Nunito Sans", sans-serif;
+  font-weight: 800;
+  cursor: pointer;
+  border: 1px solid transparent;
+}
+
+.success-btn {
+  background: #d9fff0;
+  color: #007657;
+  border-color: rgba(0, 118, 87, 0.2);
+}
+
+.neutral-btn {
+  background: #efecff;
+  color: #4231cf;
+  border-color: #e2e0fc;
+}
+
+.success-btn:hover {
+  background: #c9ffe7;
+}
+
+.neutral-btn:hover {
+  background: #e3dfff;
 }
 
 .danger-btn {

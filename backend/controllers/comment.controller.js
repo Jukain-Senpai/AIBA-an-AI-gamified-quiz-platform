@@ -1,5 +1,6 @@
 const prisma = require("../utils/prisma");
-const { canManageContent } = require("../utils/access");
+const { canManageContent, canAccessPost, canAccessComment } = require("../utils/access");
+const { detectProhibitedLanguage, moderateContent } = require("../services/moderation.service");
 
 const createComment = async (req, res) => {
     try {
@@ -10,16 +11,41 @@ const createComment = async (req, res) => {
             return res.status(400).json({ message: "Content is required" });
         }
 
-        const postExists = await prisma.post.findUnique({ where: { id: Number(postId) } });
+        const postExists = await prisma.post.findUnique({
+            where: { id: Number(postId) },
+            select: {
+                id: true,
+                authorId: true,
+                moderationStatus: true,
+            },
+        });
         if (!postExists) {
             return res.status(404).json({ message: "Post not found" });
         }
+
+        if (!canAccessPost(req.user, postExists)) {
+            return res.status(403).json({ message: "This post is not available" });
+        }
+
+        const moderationPayload = {
+            content,
+            postId: Number(postId),
+        };
+        const profanityCheck = detectProhibitedLanguage(moderationPayload);
+        if (profanityCheck.blocked) {
+            return res.status(400).json({ message: profanityCheck.reason });
+        }
+
+        const moderation = await moderateContent("comment", moderationPayload);
 
         const newComment = await prisma.comment.create({
             data: {
                 content,
                 image: image || null,
                 postId: Number(postId),
+                moderationStatus: moderation.flagged ? "PENDING" : "APPROVED",
+                moderationReason: moderation.reason || null,
+                moderatedAt: new Date(),
                 authorId: req.user.id,
             },
             include: {
@@ -41,6 +67,23 @@ const toggleUpvoteComment = async (req, res) => {
         const { id } = req.params;
         const userId = req.user.id;
         const commentId = Number(id);
+
+        const comment = await prisma.comment.findUnique({
+            where: { id: commentId },
+            select: {
+                id: true,
+                authorId: true,
+                moderationStatus: true,
+            },
+        });
+
+        if (!comment) {
+            return res.status(404).json({ message: "Comment not found" });
+        }
+
+        if (!canAccessComment(req.user, comment)) {
+            return res.status(403).json({ message: "This comment is not available" });
+        }
 
         const existingLike = await prisma.commentLike.findUnique({
             where: {
