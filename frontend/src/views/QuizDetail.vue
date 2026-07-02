@@ -56,11 +56,20 @@
           <div class="timer-ring">
             <svg viewBox="0 0 120 120" class="timer-svg" aria-hidden="true">
               <circle cx="60" cy="60" r="52" class="timer-track"></circle>
-              <circle cx="60" cy="60" r="52" class="timer-progress"></circle>
+              <circle
+                cx="60"
+                cy="60"
+                r="52"
+                class="timer-progress"
+                :style="{
+                  strokeDasharray: `${timerCircleCircumference} ${timerCircleCircumference}`,
+                  strokeDashoffset: timerCircleOffset
+                }"
+              ></circle>
             </svg>
-            <span class="timer-value">--</span>
+            <span class="timer-value">{{ remainingTime }}s</span>
           </div>
-          <span class="timer-label">Timer Soon</span>
+          <span class="timer-label">Time Left</span>
         </aside>
       </section>
 
@@ -114,6 +123,7 @@
             v-if="answered && currentIndex < totalQuestions - 1"
             class="primary-action"
             type="button"
+            :disabled="autoAdvancePending"
             @click="nextQuestion"
           >
             Next Question
@@ -123,7 +133,7 @@
             v-if="answered && currentIndex === totalQuestions - 1"
             class="primary-action"
             type="button"
-            :disabled="isSubmitting"
+            :disabled="isSubmitting || autoAdvancePending"
             @click="finishQuiz"
           >
             {{ isSubmitting ? 'Submitting...' : 'Finish Quiz' }}
@@ -161,6 +171,11 @@ export default {
       correctStreak: 0,
       answers: [],
       isSubmitting: false,
+      remainingTime: 0,
+      timerIntervalId: null,
+      autoAdvanceTimeoutId: null,
+      isResolvingAnswer: false,
+      autoAdvancePending: false,
     };
   },
 
@@ -178,9 +193,26 @@ export default {
       return this.quiz?.questions?.length || 0;
     },
 
+    questionTimeLimit() {
+      const parsed = Number(this.quiz?.timeLimit);
+      if (!Number.isFinite(parsed)) return 30;
+      return Math.min(120, Math.max(10, Math.round(parsed)));
+    },
+
     progressPercent() {
       if (!this.totalQuestions) return 0;
       return Math.round(((this.currentIndex + 1) / this.totalQuestions) * 100);
+    },
+
+    timerCircleCircumference() {
+      return 2 * Math.PI * 52;
+    },
+
+    timerCircleOffset() {
+      const progress = this.questionTimeLimit <= 0
+        ? 0
+        : Math.max(0, Math.min(1, this.remainingTime / this.questionTimeLimit));
+      return this.timerCircleCircumference * (1 - progress);
     },
 
     feedbackTone() {
@@ -196,12 +228,47 @@ export default {
     this.loadQuizData();
   },
 
+  watch: {
+    currentQuestion: {
+      immediate: true,
+      handler() {
+        if (this.quiz && this.currentQuestion) {
+          this.startQuestionTimer();
+        } else {
+          this.clearQuestionTimer();
+        }
+      },
+    },
+  },
+
+  beforeUnmount() {
+    this.clearQuestionTimer();
+  },
+
   methods: {
     getImageUrl,
 
     async loadQuizData() {
       this.loading = true;
       this.error = null;
+      this.clearQuestionTimer();
+      this.currentIndex = 0;
+      this.answered = false;
+      this.selectedOptionId = null;
+      this.correctOptionId = null;
+      this.feedback = '';
+      this.answers = [];
+      this.score = 0;
+      this.correctStreak = 0;
+      this.usedSkills = [];
+      this.removedOptionIds = [];
+      this.shieldActive = false;
+      this.shieldUsedOnId = null;
+      this.healingSongActive = false;
+      this.arcaneRevealedId = null;
+      this.isSubmitting = false;
+      this.isResolvingAnswer = false;
+      this.autoAdvancePending = false;
       try {
         const quizId = this.$route.params.id;
         const [quizRes, userRes] = await Promise.all([
@@ -213,6 +280,7 @@ export default {
         this.userSkills = Array.isArray(userRes.data.equippedSkills)
           ? userRes.data.equippedSkills.map((skill) => skill.name || skill)
           : [];
+        this.$nextTick(() => this.startQuestionTimer());
       } catch (err) {
         if (err.response?.status === 401) {
           localStorage.removeItem('token');
@@ -225,6 +293,77 @@ export default {
         }
       } finally {
         this.loading = false;
+      }
+    },
+
+    clearQuestionTimer() {
+      if (this.timerIntervalId) {
+        clearInterval(this.timerIntervalId);
+        this.timerIntervalId = null;
+      }
+
+      if (this.autoAdvanceTimeoutId) {
+        clearTimeout(this.autoAdvanceTimeoutId);
+        this.autoAdvanceTimeoutId = null;
+      }
+    },
+
+    startQuestionTimer() {
+      this.clearQuestionTimer();
+
+      if (!this.currentQuestion || this.answered || this.autoAdvancePending) {
+        this.remainingTime = this.questionTimeLimit;
+        return;
+      }
+
+      this.remainingTime = this.questionTimeLimit;
+      this.timerIntervalId = setInterval(() => {
+        if (this.answered) {
+          this.clearQuestionTimer();
+          return;
+        }
+
+        if (this.remainingTime <= 1) {
+          this.remainingTime = 0;
+          this.clearQuestionTimer();
+          this.handleTimerExpired();
+          return;
+        }
+
+        this.remainingTime -= 1;
+      }, 1000);
+    },
+
+    async handleTimerExpired() {
+      if (this.answered || this.isResolvingAnswer) return;
+      this.isResolvingAnswer = true;
+      this.clearQuestionTimer();
+      this.answered = true;
+      this.selectedOptionId = null;
+      this.correctOptionId = null;
+      this.autoAdvancePending = true;
+      this.correctStreak = 0;
+      this.feedback = "Time's up. The correct answer is highlighted.";
+
+      try {
+        const res = await api.post('/quizzes/check-answer', {
+          questionId: this.currentQuestion.id,
+        });
+        const data = res.data;
+        this.correctOptionId = data.correctOptionId;
+      } catch (err) {
+        console.error('Failed to resolve timed question', err);
+        this.feedback = 'Time ran out, but we could not load the correct answer.';
+      } finally {
+        this.autoAdvanceTimeoutId = setTimeout(() => {
+          this.autoAdvancePending = false;
+          if (this.currentIndex < this.totalQuestions - 1) {
+            this.nextQuestion();
+          } else {
+            this.finishQuiz();
+          }
+        }, 1600);
+        this.isResolvingAnswer = false;
       }
     },
 
@@ -241,7 +380,7 @@ export default {
     },
 
     isOptionDisabled(optionId) {
-      return this.answered || this.isUnavailableOption(optionId);
+      return this.answered || this.isResolvingAnswer || this.autoAdvancePending || this.isUnavailableOption(optionId);
     },
 
     isUnavailableOption(optionId) {
@@ -297,7 +436,8 @@ export default {
     },
 
     async submitAnswer(optionId, isCrowdMentality = false) {
-      if (this.answered) return;
+      if (this.answered || this.isResolvingAnswer) return;
+      this.isResolvingAnswer = true;
 
       try {
         const res = await api.post('/quizzes/check-answer', { optionId });
@@ -306,9 +446,11 @@ export default {
         if (!data.correct && this.shieldActive && !this.shieldUsedOnId) {
           this.shieldUsedOnId = optionId;
           this.feedback = 'Shield Mastery blocked that answer. Try again.';
+          this.isResolvingAnswer = false;
           return;
         }
 
+        this.clearQuestionTimer();
         this.selectedOptionId = optionId;
         this.correctOptionId = data.correctOptionId;
         this.answered = true;
@@ -334,10 +476,15 @@ export default {
       } catch (err) {
         console.error('Failed to check answer', err);
         this.feedback = 'Failed to check this answer. Please try again.';
+      } finally {
+        this.isResolvingAnswer = false;
       }
     },
 
     nextQuestion() {
+      this.clearQuestionTimer();
+      this.autoAdvancePending = false;
+      this.isResolvingAnswer = false;
       this.currentIndex += 1;
       this.answered = false;
       this.selectedOptionId = null;
@@ -348,11 +495,14 @@ export default {
       this.shieldUsedOnId = null;
       this.healingSongActive = false;
       this.arcaneRevealedId = null;
+      this.remainingTime = this.questionTimeLimit;
     },
 
     async finishQuiz() {
       if (this.isSubmitting) return;
       this.isSubmitting = true;
+      this.clearQuestionTimer();
+      this.autoAdvancePending = false;
 
       try {
         const res = await api.post(`/quizzes/${this.quiz.id}/attempts`, { answers: this.answers });

@@ -410,6 +410,7 @@ export default {
       this.quiz.category = quiz?.category || "History";
       this.quiz.difficulty = quiz?.difficulty || "Intermediate";
       this.quiz.thumbnail = quiz?.thumbnail || null;
+      this.timeLimit = quiz?.timeLimit || 30;
       this.visibility = quiz?.isPublished === false ? "Private" : "Public";
       this.questions = this.cloneQuestions(questions);
       this.selectedQuestionIndex = 0;
@@ -546,6 +547,7 @@ export default {
           body: JSON.stringify({
             quiz: {
               ...this.quiz,
+              timeLimit: this.timeLimit,
               isPublished: this.visibility === "Public"
             },
             questions: this.questions

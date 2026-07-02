@@ -15,10 +15,19 @@ const buildQuizModerationPayload = (quiz, questions) => ({
         : [],
 });
 
+const normalizeTimeLimit = (timeLimit) => {
+    const parsed = Number(timeLimit);
+    if (!Number.isFinite(parsed)) {
+        return 30;
+    }
+
+    return Math.min(120, Math.max(10, Math.round(parsed)));
+};
+
 const createQuiz = async (req, res) => {
     try {
         const { quiz, questions } = req.body;
-        const { title, description, thumbnail, isPublished, visibility } = quiz || {};
+        const { title, description, thumbnail, isPublished, visibility, timeLimit } = quiz || {};
 
         if (!title) {
             return res.status(400).json({ message: "Title is required" });
@@ -38,12 +47,14 @@ const createQuiz = async (req, res) => {
 
         const moderation = await moderateContent("quiz", moderationPayload);
         const moderationStatus = moderation.flagged ? "PENDING" : "APPROVED";
+        const normalizedTimeLimit = normalizeTimeLimit(timeLimit);
 
         const newQuiz = await prisma.quiz.create({
             data: {
                 title,
                 description,
                 thumbnail: thumbnail || null,
+                timeLimit: normalizedTimeLimit,
                 isPublished: publishedState,
                 moderationStatus,
                 moderationReason: moderation.reason || null,
@@ -96,7 +107,7 @@ const updateQuiz = async (req, res) => {
         }
 
         const { quiz, questions } = req.body;
-        const { title, description, thumbnail, isPublished, visibility } = quiz || {};
+        const { title, description, thumbnail, isPublished, visibility, timeLimit } = quiz || {};
 
         if (!title) {
             return res.status(400).json({ message: "Title is required" });
@@ -116,6 +127,7 @@ const updateQuiz = async (req, res) => {
 
         const moderation = await moderateContent("quiz", moderationPayload);
         const moderationStatus = moderation.flagged ? "PENDING" : "APPROVED";
+        const normalizedTimeLimit = normalizeTimeLimit(timeLimit);
 
         const normalizedQuestions = (Array.isArray(questions) ? questions : [])
             .filter((q) => q.text && q.text.trim() !== "")
@@ -164,6 +176,7 @@ const updateQuiz = async (req, res) => {
                     title,
                     description,
                     thumbnail: thumbnail || null,
+                    timeLimit: normalizedTimeLimit,
                     isPublished: publishedState,
                     moderationStatus,
                     moderationReason: moderation.reason || null,
@@ -210,6 +223,7 @@ const getQuizById = async (req, res) => {
                 thumbnail: true,
                 category: true,
                 difficulty: true,
+                timeLimit: true,
                 isPublished: true,
                 moderationStatus: true,
                 moderationReason: true,
@@ -257,50 +271,83 @@ const getQuizById = async (req, res) => {
 
 const checkAnswer = async (req, res) => {
     try {
-        const { optionId } = req.body;
+        const { optionId, questionId } = req.body;
 
-        if (!optionId) {
-            return res.status(400).json({ message: "optionId is required" });
+        if (!optionId && !questionId) {
+            return res.status(400).json({ message: "optionId or questionId is required" });
         }
 
-        const option = await prisma.answerOption.findUnique({
-            where: { id: Number(optionId) },
-            include: {
-                question: {
-                    include: {
-                        quiz: {
-                            select: {
-                                id: true,
-                                creatorId: true,
-                                isPublished: true,
+        let quiz = null;
+        let correctOptionId = null;
+        let isCorrect = false;
+
+        if (optionId) {
+            const option = await prisma.answerOption.findUnique({
+                where: { id: Number(optionId) },
+                include: {
+                    question: {
+                        include: {
+                            quiz: {
+                                select: {
+                                    id: true,
+                                    creatorId: true,
+                                    isPublished: true,
+                                },
                             },
-                        },
-                        options: {
-                            where: { isCorrect: true },
-                            select: { id: true },
+                            options: {
+                                where: { isCorrect: true },
+                                select: { id: true },
+                            },
                         },
                     },
                 },
-            },
-        });
+            });
 
-        if (!option) {
-            return res.status(404).json({ message: "Option not found" });
+            if (!option) {
+                return res.status(404).json({ message: "Option not found" });
+            }
+
+            quiz = option.question.quiz;
+            correctOptionId = option.question.options[0]?.id;
+            isCorrect = option.isCorrect;
+        } else {
+            const question = await prisma.question.findUnique({
+                where: { id: Number(questionId) },
+                include: {
+                    quiz: {
+                        select: {
+                            id: true,
+                            creatorId: true,
+                            isPublished: true,
+                        },
+                    },
+                    options: {
+                        where: { isCorrect: true },
+                        select: { id: true },
+                    },
+                },
+            });
+
+            if (!question) {
+                return res.status(404).json({ message: "Question not found" });
+            }
+
+            quiz = question.quiz;
+            correctOptionId = question.options[0]?.id;
         }
 
-        if (!canAccessQuiz(req.user, option.question.quiz)) {
+        if (!canAccessQuiz(req.user, quiz)) {
             return res.status(403).json({ message: "This quiz is private" });
         }
-
-        const correctOptionId = option.question.options[0]?.id;
 
         if (!correctOptionId) {
             return res.status(500).json({ message: "Quiz answer data is incomplete" });
         }
 
         res.status(200).json({
-            correct: option.isCorrect,
+            correct: isCorrect,
             correctOptionId,
+            timedOut: !optionId,
         });
     } catch (error) {
         console.error(error);
@@ -317,6 +364,7 @@ const getAllQuizzes = async (req, res) => {
             thumbnail: true,
             category: true,
             difficulty: true,
+            timeLimit: true,
             isPublished: true,
             moderationStatus: true,
             moderationReason: true,

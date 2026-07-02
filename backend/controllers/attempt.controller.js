@@ -7,7 +7,7 @@ const submitQuizAttempt = async (req, res) => {
         const quizId = Number(req.params.quizId);
         const { answers } = req.body;
 
-        if (!Array.isArray(answers) || answers.length === 0) {
+        if (!Array.isArray(answers)) {
             return res.status(400).json({ message: "Answers are required" });
         }
 
