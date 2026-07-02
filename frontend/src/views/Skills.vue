@@ -149,11 +149,23 @@
               <img src="/src/assets/icons/ui/star-fill.svg" class="btn-icon" />
             </button>
             <button 
+              v-else-if="!isEquipped(selectedSkill.name)"
+              class="unlock-btn" 
+              :class="getThemeClass(selectedSkill) + '-btn'"
+              :disabled="equippedSkills.length >= 3 || savingLoadout"
+              @click="equipSkill(selectedSkill)"
+            >
+              <span v-if="equippedSkills.length >= 3">Loadout Full</span>
+              <span v-else>{{ savingLoadout ? 'Saving...' : 'Equip for Quiz' }}</span>
+              <img src="/src/assets/icons/ui/star-fill.svg" class="btn-icon" />
+            </button>
+            <button 
               v-else
               class="unlock-btn disabled-btn" 
-              disabled
+              :disabled="savingLoadout"
+              @click="unequipSkill(selectedSkill)"
             >
-              <span>Already Unlocked</span>
+              <span>{{ savingLoadout ? 'Saving...' : 'Unequip from Quiz' }}</span>
             </button>
           </div>
         </div>
@@ -166,16 +178,30 @@
         <div class="equipped-section">
           <span class="equipped-label">Equipped:</span>
           <div class="equipped-slots">
-            <div v-for="(slot, i) in 2" :key="i" class="slot empty-slot">
-               <img src="/src/assets/icons/ui/add.svg" class="add-icon" />
-            </div>
-            <div class="slot empty-slot">
-               <img src="/src/assets/icons/ui/add.svg" class="add-icon" />
-            </div>
+            <button
+              v-for="slotIndex in 3"
+              :key="slotIndex"
+              type="button"
+              class="slot"
+              :class="getEquippedSkill(slotIndex - 1) ? 'filled-slot' : 'empty-slot'"
+              :title="getEquippedSkill(slotIndex - 1) ? getEquippedSkill(slotIndex - 1).name : 'Empty slot'"
+              :aria-label="getEquippedSkill(slotIndex - 1) ? `Equipped skill: ${getEquippedSkill(slotIndex - 1).name}` : 'Empty skill slot'"
+              @click="openEquippedSkill(slotIndex - 1)"
+            >
+              <template v-if="getEquippedSkill(slotIndex - 1)">
+                <img :src="getIconForSkill(getEquippedSkill(slotIndex - 1).name)" class="slot-skill-icon" />
+                <span class="slot-skill-name">{{ getEquippedSkill(slotIndex - 1).name }}</span>
+                <span class="slot-remove" @click.stop="unequipSkill(getEquippedSkill(slotIndex - 1))">×</span>
+              </template>
+              <template v-else>
+                <img src="/src/assets/icons/ui/add.svg" class="add-icon" />
+              </template>
+            </button>
           </div>
         </div>
-        <button class="go-quiz-btn" @click="$router.push('/quizzes')">
-          <span>Go to Quiz</span>
+        <button class="go-quiz-btn" :disabled="equippedSkills.length < 3 || savingLoadout" @click="$router.push('/quizzes')">
+          <span v-if="equippedSkills.length < 3">Equip 3 Skills</span>
+          <span v-else>Go to Quiz</span>
           <img src="/src/assets/icons/ui/rocket_launch-fill.svg" class="rocket-icon" />
         </button>
       </div>
@@ -198,9 +224,11 @@ export default {
       error: null,
       skills: [],
       userSkills: [],
+      equippedSkills: [],
       userSP: 0,
       userLevel: 1,
-      selectedSkill: null
+      selectedSkill: null,
+      savingLoadout: false
     };
   },
   methods: {
@@ -215,6 +243,7 @@ export default {
         
         this.skills = skillsRes.data;
         this.userSkills = userRes.data.unlockedSkills || [];
+        this.equippedSkills = Array.isArray(userRes.data.equippedSkills) ? userRes.data.equippedSkills : [];
         this.userSP = userRes.data.stats?.skillPoints || 0;
         this.userLevel = userRes.data.level || 1;
         
@@ -235,6 +264,12 @@ export default {
     },
     isUnlocked(name) {
       return this.userSkills.includes(name);
+    },
+    isEquipped(name) {
+      return this.equippedSkills.some((skill) => skill.name === name);
+    },
+    getEquippedSkill(slotIndex) {
+      return this.equippedSkills.find((skill) => skill.slot === slotIndex + 1) || null;
     },
     selectSkill(skill) {
       this.selectedSkill = skill;
@@ -259,6 +294,40 @@ export default {
         'Battle Fury': 'swords.svg'
       };
       return `/src/assets/icons/ui/${iconMap[name] || 'star-fill.svg'}`;
+    },
+    async saveLoadout(nextSkills) {
+      this.savingLoadout = true;
+      try {
+        const ordered = nextSkills.slice(0, 3);
+        const res = await api.put('/skills/loadout', {
+          skillIds: ordered.map((skill) => skill.id),
+        });
+        this.equippedSkills = Array.isArray(res.data?.equippedSkills) ? res.data.equippedSkills : [];
+      } catch (err) {
+        alert(err.response?.data?.message || "Failed to save your skill loadout.");
+      } finally {
+        this.savingLoadout = false;
+      }
+    },
+    async equipSkill(skill) {
+      if (!this.isUnlocked(skill.name) || this.isEquipped(skill.name)) return;
+
+      if (this.equippedSkills.length >= 3) {
+        alert("You can only equip 3 skills. Unequip one first.");
+        return;
+      }
+
+      await this.saveLoadout([...this.equippedSkills, skill]);
+    },
+    async unequipSkill(skill) {
+      if (!skill || !this.isEquipped(skill.name)) return;
+      await this.saveLoadout(this.equippedSkills.filter((entry) => entry.name !== skill.name));
+    },
+    openEquippedSkill(slotIndex) {
+      const skill = this.getEquippedSkill(slotIndex);
+      if (skill) {
+        this.selectedSkill = this.getSkillByName(skill.name);
+      }
     },
     async unlockSkill(skill) {
       if (this.isUnlocked(skill.name)) return;
@@ -720,6 +789,34 @@ export default {
   display: flex;
   align-items: center;
   justify-content: center;
+  position: relative;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 0;
+  cursor: pointer;
+}
+
+.slot.filled-slot {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.slot-skill-icon {
+  width: 18px;
+  height: 18px;
+  filter: invert(1);
+}
+
+.slot-skill-name {
+  display: none;
+}
+
+.slot-remove {
+  position: absolute;
+  top: 2px;
+  right: 4px;
+  font-size: 16px;
+  line-height: 1;
+  color: rgba(255, 255, 255, 0.8);
 }
 
 .empty-slot {
@@ -755,6 +852,12 @@ export default {
 
 .go-quiz-btn:hover {
   filter: brightness(1.1);
+}
+
+.go-quiz-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  filter: none;
 }
 
 .go-quiz-btn:active {

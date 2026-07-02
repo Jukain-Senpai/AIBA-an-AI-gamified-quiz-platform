@@ -106,6 +106,9 @@
               <span>{{ skill }}</span>
             </button>
           </div>
+          <div v-else class="skill-empty">
+            No skills equipped yet. Choose 3 on the Skill Tree.
+          </div>
 
           <button
             v-if="answered && currentIndex < totalQuestions - 1"
@@ -207,7 +210,9 @@ export default {
         ]);
 
         this.quiz = quizRes.data;
-        this.userSkills = userRes.data.unlockedSkills || [];
+        this.userSkills = Array.isArray(userRes.data.equippedSkills)
+          ? userRes.data.equippedSkills.map((skill) => skill.name || skill)
+          : [];
       } catch (err) {
         if (err.response?.status === 401) {
           localStorage.removeItem('token');
@@ -867,6 +872,13 @@ export default {
 
 .skill-strip::-webkit-scrollbar {
   display: none;
+}
+
+.skill-empty {
+  padding: 0 4px;
+  color: #777586;
+  font-size: 14px;
+  font-weight: 700;
 }
 
 .skill-btn {

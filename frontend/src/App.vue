@@ -46,7 +46,9 @@
             <span>Admin</span>
           </router-link>
           <router-link to="/profile" class="nav-item">
-            <img src="/src/assets/Profile.svg" class="nav-icon" />
+            <span class="nav-avatar-frame" :class="{ admin: isAdminUser }">
+              <img :src="navAvatarUrl" class="nav-avatar" alt="Profile" />
+            </span>
             <span>Profile</span>
           </router-link>
         </template>
@@ -79,14 +81,19 @@
 </template>
 
 <script>
+import api, { getImageUrl } from './services/api';
 import { getCurrentUserRole } from './services/session';
 
 export default {
   data() {
     return {
       isLoggedIn: !!localStorage.getItem("token"),
-      currentUserRole: getCurrentUserRole()
+      currentUserRole: getCurrentUserRole(),
+      currentUserAvatar: ''
     };
+  },
+  async mounted() {
+    await this.syncAuthState();
   },
   watch: {
     // Re-check login status whenever the route changes
@@ -114,12 +121,27 @@ export default {
     },
     isQuizPlayRoute() {
       return this.$route.path.startsWith('/quizzes/') && this.$route.params.id;
+    },
+    navAvatarUrl() {
+      return this.currentUserAvatar ? getImageUrl(this.currentUserAvatar) : '/src/assets/Profile.svg';
     }
   },
   methods: {
-    syncAuthState() {
+    async syncAuthState() {
       this.isLoggedIn = !!localStorage.getItem("token");
       this.currentUserRole = getCurrentUserRole();
+      if (!this.isLoggedIn) {
+        this.currentUserAvatar = '';
+        return;
+      }
+
+      try {
+        const res = await api.get('/users/me');
+        this.currentUserAvatar = res.data.avatar || '';
+        this.currentUserRole = (res.data.role || this.currentUserRole || '').toLowerCase();
+      } catch (err) {
+        this.currentUserAvatar = '';
+      }
     },
     logout() {
       localStorage.removeItem("token");
@@ -239,6 +261,33 @@ body, html {
   opacity: 0.7;
   /* Approximating #6B6B8A from black using CSS filters */
   filter: brightness(0) saturate(100%) invert(43%) sepia(21%) saturate(541%) hue-rotate(206deg) brightness(95%) contrast(92%); 
+}
+
+.nav-avatar-frame {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 2px solid #4231cf;
+  background: #e8e5ff;
+  overflow: hidden;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 0 3px rgba(66, 49, 207, 0.12);
+  flex-shrink: 0;
+}
+
+.nav-avatar-frame.admin {
+  border-color: #007657;
+  background: #d9fff0;
+  box-shadow: 0 0 0 3px rgba(0, 118, 87, 0.14);
+}
+
+.nav-avatar {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
 }
 
 .nav-item:hover,

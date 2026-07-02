@@ -22,7 +22,8 @@ router.get("/me", authMiddleware, async (req, res) => {
                     }
                 },
                 skills: {
-                    include: { skill: true }
+                    include: { skill: true },
+                    orderBy: { equippedSlot: "asc" }
                 }
             },
         });
@@ -48,6 +49,17 @@ router.get("/me", authMiddleware, async (req, res) => {
             avatar: user.avatar,
             recentAttempts: user.attempts,
             unlockedSkills: user.skills.map(s => s.skill.name),
+            equippedSkills: user.skills
+                .filter((s) => s.equippedSlot !== null)
+                .sort((a, b) => (a.equippedSlot || 0) - (b.equippedSlot || 0))
+                .map((s) => ({
+                    slot: s.equippedSlot,
+                    id: s.skill.id,
+                    name: s.skill.name,
+                    path: s.skill.path,
+                    requiredLevel: s.skill.requiredLevel,
+                    cost: s.skill.cost,
+                })),
             stats: {
                 quizzesCompleted: allAttemptsCount,
                 winStreak: user.winStreak,

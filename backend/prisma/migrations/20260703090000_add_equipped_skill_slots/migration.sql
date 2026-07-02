@@ -1,0 +1,2 @@
+ALTER TABLE "UserSkill"
+ADD COLUMN IF NOT EXISTS "equippedSlot" INTEGER;

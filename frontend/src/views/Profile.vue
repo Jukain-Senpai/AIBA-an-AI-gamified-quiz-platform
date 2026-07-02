@@ -166,16 +166,9 @@
             <input id="avatar-upload" type="file" accept="image/*" @change="handleAvatarUpload" style="display: none;" />
             <p v-if="uploadingAvatar" class="upload-status">Uploading...</p>
           </div>
-          <div class="avatar-grid">
-            <div 
-              v-for="avatar in availableAvatars" 
-              :key="avatar"
-              class="avatar-option"
-              :class="{ selected: editForm.avatar === avatar }"
-              @click="editForm.avatar = avatar"
-            >
-              <img :src="getAvatarUrl(avatar)" />
-            </div>
+          <div v-if="editForm.avatar" class="avatar-preview-row">
+            <img :src="getAvatarUrl(editForm.avatar)" class="avatar-preview-img" alt="Selected avatar" />
+            <button type="button" class="clear-avatar-btn" @click="editForm.avatar = ''">Remove avatar</button>
           </div>
           <p v-if="editError" class="error-msg">{{ editError }}</p>
           <div class="modal-actions full-width">
@@ -212,13 +205,6 @@ export default {
         password: '',
         avatar: ''
       },
-      availableAvatars: [
-        'NeonKnight_M.jpg',
-        'NeonKnight_F.jpg',
-        'knight.jpg',
-        'download (1).jpg',
-        'AI.png'
-      ]
     };
   },
   methods: {
@@ -277,9 +263,6 @@ export default {
       try {
         const data = await uploadImage(file, 'avatar');
         this.editForm.avatar = data.url;
-        if (!this.availableAvatars.includes(data.url)) {
-          this.availableAvatars.unshift(data.url);
-        }
       } catch (err) {
         this.editError = err.response?.data?.message || "Failed to upload image. Max 5MB.";
       } finally {
@@ -800,34 +783,26 @@ export default {
   border-color: #5b4fe8;
 }
 
-.avatar-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 1rem;
+.avatar-preview-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 
-.avatar-option {
-  border-radius: 12px;
-  overflow: hidden;
-  border: 3px solid transparent;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.avatar-option img {
-  width: 100%;
-  height: 100px;
+.avatar-preview-img {
+  width: 84px;
+  height: 84px;
+  border-radius: 50%;
   object-fit: cover;
-  display: block;
+  border: 4px solid #4231cf;
 }
 
-.avatar-option:hover {
-  transform: scale(1.05);
-}
-
-.avatar-option.selected {
-  border-color: #4231cf;
-  box-shadow: 0 0 15px rgba(66, 49, 207, 0.2);
+.clear-avatar-btn {
+  border: none;
+  background: transparent;
+  color: #ba1a1a;
+  font-weight: 800;
+  cursor: pointer;
 }
 
 .modal-actions {
