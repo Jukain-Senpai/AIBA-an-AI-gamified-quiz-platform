@@ -5,11 +5,11 @@
         <p class="eyebrow">Moderator Console</p>
         <h1>Admin</h1>
         <p class="hero-text">
-          Review quizzes, posts, and comments from one place. Public quizzes stay open to everyone, while private ones stay with their creator.
+          Review quizzes, posts, and comments from one place. Ensure the community stays safe and clean.
         </p>
       </div>
 
-      <button class="refresh-btn" type="button" @click="fetchAdminContent" :disabled="loading">
+      <button class="refresh-btn" type="button" @click="refreshAll" :disabled="loading">
         <span class="material-symbols-outlined">refresh</span>
         Refresh
       </button>
@@ -17,16 +17,16 @@
 
     <section class="stats-grid" aria-label="Content summary">
       <article class="stat-card">
-        <span class="stat-label">Quizzes</span>
-        <strong class="stat-value">{{ quizzes.length }}</strong>
+        <span class="stat-label">Pending Quizzes</span>
+        <strong class="stat-value">{{ stats.pendingQuizzes }}</strong>
       </article>
       <article class="stat-card">
-        <span class="stat-label">Posts</span>
-        <strong class="stat-value">{{ posts.length }}</strong>
+        <span class="stat-label">Pending Posts</span>
+        <strong class="stat-value">{{ stats.pendingPosts }}</strong>
       </article>
       <article class="stat-card">
-        <span class="stat-label">Comments</span>
-        <strong class="stat-value">{{ comments.length }}</strong>
+        <span class="stat-label">Pending Comments</span>
+        <strong class="stat-value">{{ stats.pendingComments }}</strong>
       </article>
     </section>
 
@@ -44,7 +44,50 @@
         </button>
       </div>
 
-      <p class="control-note">{{ activeTabLabel }} ready for review</p>
+      <p class="control-note">Moderation {{ activeTab === 'logs' ? 'History' : 'Queue' }}</p>
+    </section>
+
+    <!-- Filters Bar -->
+    <section class="filters-bar" v-if="activeTab !== 'logs'">
+      <div class="search-wrap">
+        <span class="material-symbols-outlined search-icon">search</span>
+        <input 
+          type="text" 
+          v-model="searchQuery" 
+          placeholder="Search by keyword..." 
+          @keyup.enter="fetchContent(1)"
+        />
+      </div>
+      
+      <div class="filter-wrap">
+        <span class="material-symbols-outlined">filter_list</span>
+        <select v-model="statusFilter" @change="fetchContent(1)">
+          <option value="PENDING">Pending</option>
+          <option value="APPROVED">Approved</option>
+          <option value="REJECTED">Rejected</option>
+        </select>
+      </div>
+
+      <div class="filter-wrap">
+        <span class="material-symbols-outlined">sort</span>
+        <select v-model="sortBy" @change="fetchContent(1)">
+          <option value="desc">Newest First</option>
+          <option value="asc">Oldest First</option>
+        </select>
+      </div>
+    </section>
+
+    <!-- Bulk Actions -->
+    <section class="bulk-actions" v-if="selectedItems.length > 0 && activeTab !== 'logs'">
+      <div class="bulk-info">
+        <span class="material-symbols-outlined">library_add_check</span>
+        <span>{{ selectedItems.length }} item(s) selected</span>
+      </div>
+      <div class="bulk-btns">
+        <button class="success-btn" @click="bulkModerate('APPROVED')">Approve Selected</button>
+        <button class="danger-btn" @click="openRejectModal(null, true)">Reject Selected</button>
+        <button class="neutral-btn" @click="selectedItems = []">Clear</button>
+      </div>
     </section>
 
     <section v-if="loading" class="state-panel">
@@ -54,185 +97,130 @@
 
     <section v-else-if="error" class="state-panel">
       <p class="error-text">{{ error }}</p>
-      <button class="retry-btn" type="button" @click="fetchAdminContent">Retry</button>
+      <button class="retry-btn" type="button" @click="refreshAll">Retry</button>
     </section>
 
     <section v-else class="content-section">
-      <template v-if="activeTab === 'quizzes'">
-        <article v-for="quiz in quizzes" :key="quiz.id" class="item-card">
-          <div class="item-media" :style="quiz.thumbnail ? { backgroundImage: `url(${getImageUrl(quiz.thumbnail)})` } : {}">
-            <div class="media-fallback" v-if="!quiz.thumbnail">
-              <span class="material-symbols-outlined">quiz</span>
-            </div>
-          </div>
-
-          <div class="item-body">
-              <div class="item-topline">
-                <div>
-                  <p class="item-title">{{ quiz.title }}</p>
-                  <p class="item-meta">
-                    by {{ getAuthorLabel(quiz.creator) }} · {{ quiz._count.questions }} questions
-                  </p>
-                </div>
-              <div class="pill-stack">
-                <span class="status-pill" :class="quiz.isPublished ? 'public' : 'private'">
-                  {{ quiz.isPublished ? 'Public' : 'Private' }}
-                </span>
-                <span class="status-pill moderation" :class="quiz.moderationStatus?.toLowerCase()">
-                  {{ quiz.moderationStatus || 'APPROVED' }}
-                </span>
-              </div>
-              </div>
-
-            <p class="item-description">{{ quiz.description || 'No description provided.' }}</p>
-            <p v-if="quiz.moderationReason" class="moderation-note">{{ quiz.moderationReason }}</p>
-
-            <div class="item-footer">
-              <div class="tag-row">
-                <span class="tag">{{ quiz.category || 'General' }}</span>
-                <span class="tag">{{ quiz.difficulty || 'Easy' }}</span>
-              </div>
-              <div class="action-row">
-                <button
-                  v-if="quiz.moderationStatus === 'PENDING'"
-                  class="success-btn"
-                  type="button"
-                  @click="moderateItem('quiz', quiz.id, 'APPROVED')"
-                >
-                  <span class="material-symbols-outlined">check</span>
-                  Approve
-                </button>
-                <button
-                  v-if="quiz.moderationStatus === 'PENDING'"
-                  class="neutral-btn"
-                  type="button"
-                  @click="moderateItem('quiz', quiz.id, 'REJECTED')"
-                >
-                  <span class="material-symbols-outlined">close</span>
-                  Reject
-                </button>
-                <button class="danger-btn" type="button" @click="deleteItem('quiz', quiz.id)">
-                  <span class="material-symbols-outlined">delete</span>
-                  Delete
-                </button>
-              </div>
-            </div>
-          </div>
-        </article>
+      <!-- Audit Logs Tab -->
+      <template v-if="activeTab === 'logs'">
+        <div class="logs-container">
+          <table class="logs-table">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Admin</th>
+                <th>Action</th>
+                <th>Target</th>
+                <th>Reason</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="log in logs" :key="log.id">
+                <td>{{ formatDate(log.createdAt) }}</td>
+                <td>{{ log.admin?.username || 'Unknown Admin' }}</td>
+                <td>
+                  <span class="status-pill moderation" :class="log.action.toLowerCase()">
+                    {{ log.action }}
+                  </span>
+                </td>
+                <td>{{ log.targetType }} #{{ log.targetId }}</td>
+                <td>{{ log.reason || '-' }}</td>
+              </tr>
+              <tr v-if="logs.length === 0">
+                <td colspan="5" class="empty-state">No moderation logs found.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </template>
 
-      <template v-else-if="activeTab === 'posts'">
-        <article v-for="post in posts" :key="post.id" class="item-card">
-          <div class="item-media" :style="post.image ? { backgroundImage: `url(${getImageUrl(post.image)})` } : {}">
-            <div class="media-fallback" v-if="!post.image">
-              <span class="material-symbols-outlined">article</span>
-            </div>
-          </div>
-
-          <div class="item-body">
-              <div class="item-topline">
-                <div>
-                  <p class="item-title">{{ post.title }}</p>
-                  <p class="item-meta">
-                    by {{ getAuthorLabel(post.author) }} · {{ post._count.comments }} comments · {{ post.upvotes }} upvotes
-                  </p>
-                </div>
-              <div class="pill-stack">
-                <span class="status-pill soft">Forum</span>
-                <span class="status-pill moderation" :class="post.moderationStatus?.toLowerCase()">
-                  {{ post.moderationStatus || 'APPROVED' }}
-                </span>
-              </div>
-              </div>
-
-            <p class="item-description">{{ post.content }}</p>
-            <p v-if="post.moderationReason" class="moderation-note">{{ post.moderationReason }}</p>
-
-            <div class="item-footer">
-              <div class="tag-row">
-                <span class="tag">{{ post.category || 'General' }}</span>
-                <span v-for="tag in (post.tags || []).slice(0, 2)" :key="tag" class="tag">{{ tag }}</span>
-              </div>
-              <div class="action-row">
-                <button
-                  v-if="post.moderationStatus === 'PENDING'"
-                  class="success-btn"
-                  type="button"
-                  @click="moderateItem('post', post.id, 'APPROVED')"
-                >
-                  <span class="material-symbols-outlined">check</span>
-                  Approve
-                </button>
-                <button
-                  v-if="post.moderationStatus === 'PENDING'"
-                  class="neutral-btn"
-                  type="button"
-                  @click="moderateItem('post', post.id, 'REJECTED')"
-                >
-                  <span class="material-symbols-outlined">close</span>
-                  Reject
-                </button>
-                <button class="danger-btn" type="button" @click="deleteItem('post', post.id)">
-                  <span class="material-symbols-outlined">delete</span>
-                  Delete
-                </button>
-              </div>
-            </div>
-          </div>
-        </article>
-      </template>
-
+      <!-- Content Queue Tabs (All, Quizzes, Posts, Comments) -->
       <template v-else>
-        <article v-for="comment in comments" :key="comment.id" class="item-card comment-card">
-          <div class="comment-marker">
-            <span class="material-symbols-outlined">comment</span>
+        <!-- Select All Toggle -->
+        <div class="select-all-wrap" v-if="items.length > 0">
+          <input 
+            type="checkbox" 
+            id="selectAll" 
+            :checked="isAllSelected" 
+            @change="toggleSelectAll"
+          />
+          <label for="selectAll">Select All on this page</label>
+        </div>
+
+        <article v-for="item in items" :key="item.type + item.id" class="item-card" :class="{'selected': isSelected(item)}">
+          
+          <div class="item-checkbox">
+            <input type="checkbox" :value="item" v-model="selectedItems" />
+          </div>
+
+          <div class="item-media" :style="getMediaStyle(item)">
+            <div class="media-fallback" v-if="!hasMedia(item)">
+              <span class="material-symbols-outlined">{{ getIconForType(item.type) }}</span>
+            </div>
+            <div class="type-badge">{{ item.type }}</div>
           </div>
 
           <div class="item-body">
-              <div class="item-topline">
-                <div>
-                  <p class="item-title">{{ getAuthorLabel(comment.author) }}</p>
-                  <p class="item-meta">On {{ comment.post?.title || 'Unknown post' }} · {{ comment.upvotes }} upvotes</p>
-                </div>
+            <div class="item-topline">
+              <div>
+                <p class="item-title">{{ getItemTitle(item) }}</p>
+                <p class="item-meta">
+                  by {{ getAuthorLabel(item) }} · {{ formatDate(item.createdAt) }}
+                </p>
+              </div>
               <div class="pill-stack">
-                <span class="status-pill soft">Comment</span>
-                <span class="status-pill moderation" :class="comment.moderationStatus?.toLowerCase()">
-                  {{ comment.moderationStatus || 'APPROVED' }}
+                <span v-if="item.type === 'quiz'" class="status-pill" :class="item.isPublished ? 'public' : 'private'">
+                  {{ item.isPublished ? 'Public' : 'Private' }}
+                </span>
+                <span class="status-pill moderation" :class="item.moderationStatus?.toLowerCase()">
+                  {{ item.moderationStatus || 'APPROVED' }}
                 </span>
               </div>
+            </div>
+
+            <!-- AI Flag Warning -->
+            <div v-if="item.moderationStatus === 'PENDING' && item.moderationReason" class="ai-warning">
+              <span class="material-symbols-outlined warning-icon">warning</span>
+              <div class="warning-text">
+                <strong>AI Auto-Flag:</strong> {{ item.moderationReason }}
               </div>
+            </div>
 
-            <p class="item-description">{{ comment.content }}</p>
-            <p v-if="comment.moderationReason" class="moderation-note">{{ comment.moderationReason }}</p>
+            <p class="item-description">{{ getItemContent(item) }}</p>
+            <p v-if="item.moderationStatus !== 'PENDING' && item.moderationReason" class="moderation-note">
+              Moderator Note: {{ item.moderationReason }}
+            </p>
 
-            <div v-if="comment.image" class="inline-preview">
-              <img :src="getImageUrl(comment.image)" alt="Comment image" />
+            <div v-if="item.type === 'comment' && item.image" class="inline-preview">
+              <img :src="getImageUrl(item.image)" alt="Comment image" />
             </div>
 
             <div class="item-footer">
               <div class="tag-row">
-                <span class="tag">Post #{{ comment.post?.id || 'N/A' }}</span>
+                <span class="tag" v-if="item.category">{{ item.category }}</span>
+                <span class="tag" v-if="item.difficulty">{{ item.difficulty }}</span>
+                <span v-if="item.type === 'post'" v-for="tag in (item.tags || []).slice(0, 2)" :key="tag" class="tag">{{ tag }}</span>
               </div>
               <div class="action-row">
                 <button
-                  v-if="comment.moderationStatus === 'PENDING'"
+                  v-if="item.moderationStatus === 'PENDING'"
                   class="success-btn"
                   type="button"
-                  @click="moderateItem('comment', comment.id, 'APPROVED')"
+                  @click="moderateItem(item, 'APPROVED')"
                 >
                   <span class="material-symbols-outlined">check</span>
                   Approve
                 </button>
                 <button
-                  v-if="comment.moderationStatus === 'PENDING'"
+                  v-if="item.moderationStatus === 'PENDING'"
                   class="neutral-btn"
                   type="button"
-                  @click="moderateItem('comment', comment.id, 'REJECTED')"
+                  @click="openRejectModal(item, false)"
                 >
                   <span class="material-symbols-outlined">close</span>
                   Reject
                 </button>
-                <button class="danger-btn" type="button" @click="deleteItem('comment', comment.id)">
+                <button class="danger-btn" type="button" @click="deleteItem(item)">
                   <span class="material-symbols-outlined">delete</span>
                   Delete
                 </button>
@@ -240,12 +228,45 @@
             </div>
           </div>
         </article>
+
+        <div v-if="items.length === 0" class="empty-state">
+          No content matches your current filters. You're all caught up!
+        </div>
       </template>
 
-      <div v-if="currentList.length === 0" class="empty-state">
-        Nothing to review in this section right now.
+      <!-- Pagination -->
+      <div class="pagination-bar" v-if="totalPages > 1">
+        <button class="page-btn" :disabled="page <= 1" @click="fetchContent(page - 1)">
+          <span class="material-symbols-outlined">chevron_left</span> Previous
+        </button>
+        <span class="page-info">Page {{ page }} of {{ totalPages }}</span>
+        <button class="page-btn" :disabled="page >= totalPages" @click="fetchContent(page + 1)">
+          Next <span class="material-symbols-outlined">chevron_right</span>
+        </button>
       </div>
+
     </section>
+
+    <!-- Reject Modal -->
+    <div v-if="rejectModal.show" class="modal-overlay" @click.self="closeRejectModal">
+      <div class="modal-content">
+        <h3>Reject Content</h3>
+        <p v-if="rejectModal.isBulk">You are rejecting {{ selectedItems.length }} item(s).</p>
+        <p v-else>Please provide a reason for rejecting this {{ rejectModal.item?.type }}.</p>
+        
+        <textarea 
+          v-model="rejectModal.reason" 
+          placeholder="e.g. Contains inappropriate language"
+          rows="4"
+        ></textarea>
+        
+        <div class="modal-actions">
+          <button class="neutral-btn" @click="closeRejectModal">Cancel</button>
+          <button class="danger-btn" @click="confirmReject">Confirm Reject</button>
+        </div>
+      </div>
+    </div>
+
   </div>
 </template>
 
@@ -258,99 +279,238 @@ export default {
     return {
       loading: true,
       error: null,
-      activeTab: "quizzes",
-      quizzes: [],
-      posts: [],
-      comments: [],
+      activeTab: "all",
       tabs: [
+        { key: "all", label: "Unified Queue" },
         { key: "quizzes", label: "Quizzes" },
         { key: "posts", label: "Posts" },
         { key: "comments", label: "Comments" },
+        { key: "logs", label: "Audit Logs" },
       ],
+      stats: {
+        pendingQuizzes: 0,
+        pendingPosts: 0,
+        pendingComments: 0
+      },
+      
+      // Pagination & Filters
+      items: [],
+      logs: [],
+      page: 1,
+      totalPages: 1,
+      limit: 15,
+      searchQuery: "",
+      statusFilter: "PENDING",
+      sortBy: "desc",
+      
+      // Bulk Actions
+      selectedItems: [],
+
+      // Reject Modal
+      rejectModal: {
+        show: false,
+        isBulk: false,
+        item: null,
+        reason: ""
+      }
     };
   },
   computed: {
-    currentList() {
-      if (this.activeTab === "quizzes") return this.quizzes;
-      if (this.activeTab === "posts") return this.posts;
-      return this.comments;
-    },
-    activeTabLabel() {
-      const tab = this.tabs.find((item) => item.key === this.activeTab);
-      return tab ? tab.label : "Content";
-    },
+    isAllSelected() {
+      if (this.items.length === 0) return false;
+      return this.selectedItems.length === this.items.length;
+    }
+  },
+  watch: {
+    activeTab() {
+      this.searchQuery = "";
+      this.selectedItems = [];
+      this.fetchContent(1);
+    }
   },
   methods: {
     getImageUrl,
-    getAuthorLabel(author) {
+    formatDate(dateString) {
+      if (!dateString) return "Unknown date";
+      return new Date(dateString).toLocaleDateString(undefined, { 
+        year: 'numeric', month: 'short', day: 'numeric', 
+        hour: '2-digit', minute:'2-digit' 
+      });
+    },
+    getAuthorLabel(item) {
+      const author = item.creator || item.author;
       if (!author) return "Unknown";
       return author.username || author.email?.split("@")[0] || "Unknown";
     },
-    async fetchAdminContent() {
+    getItemTitle(item) {
+      if (item.type === 'quiz') return item.title;
+      if (item.type === 'post') return item.title;
+      if (item.type === 'comment') return `Comment on ${item.post?.title || 'a post'}`;
+      return "Untitled";
+    },
+    getItemContent(item) {
+      if (item.type === 'quiz') return item.description || 'No description provided.';
+      if (item.type === 'post') return item.content;
+      if (item.type === 'comment') return item.content;
+      return "";
+    },
+    getIconForType(type) {
+      if (type === 'quiz') return 'quiz';
+      if (type === 'post') return 'article';
+      if (type === 'comment') return 'comment';
+      return 'help';
+    },
+    hasMedia(item) {
+      if (item.type === 'quiz') return !!item.thumbnail;
+      if (item.type === 'post') return !!item.image;
+      return false;
+    },
+    getMediaStyle(item) {
+      if (item.type === 'quiz' && item.thumbnail) return { backgroundImage: `url(${this.getImageUrl(item.thumbnail)})` };
+      if (item.type === 'post' && item.image) return { backgroundImage: `url(${this.getImageUrl(item.image)})` };
+      return {};
+    },
+    isSelected(item) {
+      return this.selectedItems.some(i => i.id === item.id && i.type === item.type);
+    },
+    toggleSelectAll(e) {
+      if (e.target.checked) {
+        this.selectedItems = [...this.items];
+      } else {
+        this.selectedItems = [];
+      }
+    },
+    async refreshAll() {
+      this.fetchStats();
+      this.fetchContent(this.page);
+    },
+    async fetchStats() {
+      try {
+        const response = await api.get("/admin/content?tab=stats");
+        this.stats = response.data;
+      } catch (err) {
+        console.error("Failed to fetch stats", err);
+      }
+    },
+    async fetchContent(page = 1) {
       this.loading = true;
       this.error = null;
+      this.page = page;
+      this.selectedItems = [];
+
       try {
-        const response = await api.get("/admin/content");
-        this.quizzes = Array.isArray(response.data?.quizzes) ? response.data.quizzes : [];
-        this.posts = Array.isArray(response.data?.posts) ? response.data.posts : [];
-        this.comments = Array.isArray(response.data?.comments) ? response.data.comments : [];
+        if (this.activeTab === 'logs') {
+          const res = await api.get(`/admin/logs`, {
+            params: { page: this.page, limit: this.limit }
+          });
+          this.logs = res.data.items || [];
+          this.totalPages = res.data.totalPages || 1;
+        } else {
+          const res = await api.get(`/admin/content`, {
+            params: {
+              tab: this.activeTab,
+              page: this.page,
+              limit: this.limit,
+              status: this.statusFilter,
+              search: this.searchQuery,
+              sortBy: this.sortBy
+            }
+          });
+          this.items = res.data.items || [];
+          this.totalPages = res.data.totalPages || 1;
+        }
       } catch (err) {
-        if (err.response?.status === 401) {
-          localStorage.removeItem("token");
-          this.$router.push("/login");
-          return;
-        }
-
-        if (err.response?.status === 403) {
-          this.$router.push("/dashboard");
-          return;
-        }
-
-        this.error = "Failed to load moderation data.";
-        console.error(err);
+        this.handleError(err);
       } finally {
         this.loading = false;
       }
     },
-    async deleteItem(type, id) {
-      const labels = {
-        quiz: "quiz",
-        post: "post",
-        comment: "comment",
-      };
-
-      if (!window.confirm(`Delete this ${labels[type]}? This cannot be undone.`)) {
+    handleError(err) {
+      if (err.response?.status === 401) {
+        localStorage.removeItem("token");
+        this.$router.push("/login");
         return;
       }
+      if (err.response?.status === 403) {
+        this.$router.push("/dashboard");
+        return;
+      }
+      this.error = "Failed to load moderation data.";
+      console.error(err);
+    },
+    async deleteItem(item) {
+      if (!window.confirm(`Delete this ${item.type}? This cannot be undone.`)) return;
 
       try {
         const routes = {
-          quiz: `/quizzes/${id}`,
-          post: `/posts/${id}`,
-          comment: `/comments/${id}`,
+          quiz: `/quizzes/${item.id}`,
+          post: `/posts/${item.id}`,
+          comment: `/comments/${item.id}`,
         };
-
-        await api.delete(routes[type]);
-        await this.fetchAdminContent();
+        await api.delete(routes[item.type]);
+        await this.refreshAll();
       } catch (err) {
-        alert(err.response?.data?.message || `Failed to delete ${labels[type]}`);
+        alert(err.response?.data?.message || `Failed to delete ${item.type}`);
         console.error(err);
       }
     },
-    async moderateItem(type, id, moderationStatus) {
+    async moderateItem(item, status, reason = null) {
       try {
-        await api.patch(`/admin/content/${type}/${id}`, {
-          moderationStatus,
+        await api.patch(`/admin/content/${item.type}/${item.id}`, {
+          moderationStatus: status,
+          moderationReason: reason
         });
-        await this.fetchAdminContent();
+        await this.refreshAll();
       } catch (err) {
         alert(err.response?.data?.message || "Failed to update moderation status");
         console.error(err);
       }
     },
+    async bulkModerate(status, reason = null) {
+      if (this.selectedItems.length === 0) return;
+      
+      if (status === 'APPROVED' && !window.confirm(`Approve ${this.selectedItems.length} items?`)) {
+        return;
+      }
+
+      try {
+        const payloadItems = this.selectedItems.map(i => ({ type: i.type, id: i.id }));
+        await api.post(`/admin/content/bulk-moderate`, {
+          items: payloadItems,
+          moderationStatus: status,
+          moderationReason: reason
+        });
+        
+        this.selectedItems = [];
+        await this.refreshAll();
+      } catch (err) {
+        alert(err.response?.data?.message || "Failed to bulk update status");
+        console.error(err);
+      }
+    },
+    openRejectModal(item, isBulk) {
+      this.rejectModal = {
+        show: true,
+        isBulk,
+        item,
+        reason: ""
+      };
+    },
+    closeRejectModal() {
+      this.rejectModal.show = false;
+    },
+    async confirmReject() {
+      const reason = this.rejectModal.reason;
+      if (this.rejectModal.isBulk) {
+        await this.bulkModerate('REJECTED', reason);
+      } else {
+        await this.moderateItem(this.rejectModal.item, 'REJECTED', reason);
+      }
+      this.closeRejectModal();
+    }
   },
   mounted() {
-    this.fetchAdminContent();
+    this.refreshAll();
   },
 };
 </script>
@@ -367,6 +527,8 @@ export default {
 .hero-band,
 .stats-grid,
 .control-bar,
+.filters-bar,
+.bulk-actions,
 .content-section,
 .state-panel {
   max-width: 1200px;
@@ -405,13 +567,6 @@ export default {
   line-height: 1.55;
 }
 
-.refresh-btn,
-.retry-btn,
-.danger-btn,
-.tab-btn {
-  font-family: "Nunito Sans", sans-serif;
-}
-
 .refresh-btn {
   display: inline-flex;
   align-items: center;
@@ -425,11 +580,6 @@ export default {
   font-weight: 800;
   cursor: pointer;
   box-shadow: 0 4px 14px rgba(66, 49, 207, 0.06);
-}
-
-.refresh-btn:disabled {
-  opacity: 0.65;
-  cursor: not-allowed;
 }
 
 .stats-grid {
@@ -501,24 +651,142 @@ export default {
   font-weight: 600;
 }
 
+.filters-bar {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 16px;
+  background: #ffffff;
+  padding: 12px;
+  border-radius: 8px;
+  border: 1px solid #e2e0fc;
+}
+
+.search-wrap {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  background: #f5f2ff;
+  border-radius: 6px;
+  padding: 0 12px;
+}
+
+.search-wrap input {
+  flex: 1;
+  border: none;
+  background: transparent;
+  padding: 10px;
+  outline: none;
+  font-family: inherit;
+  color: #1a1a2e;
+}
+
+.search-icon {
+  color: #777586;
+  font-size: 20px;
+}
+
+.filter-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #f5f2ff;
+  border-radius: 6px;
+  padding: 0 12px;
+}
+
+.filter-wrap select {
+  border: none;
+  background: transparent;
+  padding: 10px 0;
+  outline: none;
+  font-family: inherit;
+  color: #1a1a2e;
+  cursor: pointer;
+}
+
+.bulk-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #4231cf;
+  color: #ffffff;
+  padding: 12px 20px;
+  border-radius: 8px;
+  margin-bottom: 16px;
+  animation: slideDown 0.2s ease-out;
+}
+
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.bulk-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+}
+
+.bulk-btns {
+  display: flex;
+  gap: 8px;
+}
+
 .content-section {
   display: grid;
   gap: 16px;
 }
 
+.select-all-wrap {
+  padding: 8px 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  color: #464555;
+  background: #fff;
+  border-radius: 8px;
+  border: 1px solid #e2e0fc;
+}
+
+.select-all-wrap input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+}
+
 .item-card {
   display: grid;
-  grid-template-columns: 180px minmax(0, 1fr);
+  grid-template-columns: auto 160px minmax(0, 1fr);
   gap: 18px;
   background: #ffffff;
   border: 1px solid #e2e0fc;
   border-radius: 8px;
   padding: 14px;
-  box-shadow: 0 8px 22px rgba(66, 49, 207, 0.06);
+  box-shadow: 0 4px 12px rgba(66, 49, 207, 0.04);
+  transition: all 0.2s;
+}
+
+.item-card.selected {
+  border-color: #4231cf;
+  background: #fbfaff;
+}
+
+.item-checkbox {
+  display: flex;
+  align-items: flex-start;
+  padding-top: 4px;
+}
+
+.item-checkbox input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
 }
 
 .item-media {
-  min-height: 140px;
+  min-height: 120px;
   border-radius: 8px;
   background: #efecff;
   background-size: cover;
@@ -527,20 +795,27 @@ export default {
   display: flex;
   align-items: center;
   justify-content: center;
-}
-
-.media-fallback,
-.comment-marker {
-  display: grid;
-  place-items: center;
-  color: #4231cf;
-  background: #e8e5ff;
+  position: relative;
 }
 
 .media-fallback {
-  width: 100%;
-  height: 100%;
+  display: grid;
+  place-items: center;
+  color: #4231cf;
   font-size: 34px;
+}
+
+.type-badge {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  background: rgba(0, 0, 0, 0.6);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 4px;
+  text-transform: uppercase;
 }
 
 .item-body {
@@ -562,13 +837,12 @@ export default {
   align-items: center;
   gap: 8px;
   flex-wrap: wrap;
-  justify-content: flex-end;
 }
 
 .item-title {
   margin: 0;
   font-size: 18px;
-  font-weight: 900;
+  font-weight: 800;
   line-height: 1.3;
 }
 
@@ -586,12 +860,56 @@ export default {
   overflow-wrap: anywhere;
 }
 
+.ai-warning {
+  background: #fff1c7;
+  border: 1px solid #ffd466;
+  color: #6b4b00;
+  padding: 10px 14px;
+  border-radius: 6px;
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+}
+
+.warning-icon {
+  color: #b37d00;
+  margin-top: 2px;
+}
+
+.warning-text {
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.moderation-note {
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: 6px;
+  background: #f5f2ff;
+  color: #464555;
+  font-size: 13px;
+  font-style: italic;
+}
+
+.inline-preview {
+  max-width: 240px;
+  border-radius: 6px;
+  overflow: hidden;
+  border: 1px solid #e2e0fc;
+}
+.inline-preview img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
 .item-footer {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
   flex-wrap: wrap;
+  margin-top: auto;
 }
 
 .tag-row {
@@ -604,56 +922,35 @@ export default {
 .status-pill {
   display: inline-flex;
   align-items: center;
-  min-height: 28px;
+  min-height: 26px;
   padding: 0 10px;
   border-radius: 9999px;
   font-size: 12px;
   font-weight: 800;
 }
-
 .tag {
   background: #efecff;
   color: #4231cf;
 }
-
 .status-pill {
   background: #e8e5ff;
   color: #4231cf;
 }
-
 .status-pill.private {
   background: #fce8e6;
   color: #ba1a1a;
 }
-
-.status-pill.soft {
-  background: #f5f2ff;
-  color: #464555;
-}
-
 .status-pill.moderation.pending {
   background: #fff1c7;
   color: #6b4b00;
 }
-
 .status-pill.moderation.approved {
   background: #d9fff0;
   color: #007657;
 }
-
 .status-pill.moderation.rejected {
   background: #ffdad6;
   color: #ba1a1a;
-}
-
-.moderation-note {
-  margin: 0;
-  padding: 10px 12px;
-  border-radius: 8px;
-  background: #f5f2ff;
-  color: #464555;
-  font-size: 13px;
-  line-height: 1.5;
 }
 
 .action-row {
@@ -664,17 +961,18 @@ export default {
 }
 
 .success-btn,
-.neutral-btn {
+.neutral-btn,
+.danger-btn {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  min-height: 40px;
+  gap: 6px;
+  min-height: 36px;
   padding: 0 14px;
-  border-radius: 8px;
-  font-family: "Nunito Sans", sans-serif;
-  font-weight: 800;
+  border-radius: 6px;
+  font-weight: 700;
   cursor: pointer;
   border: 1px solid transparent;
+  font-size: 13px;
 }
 
 .success-btn {
@@ -682,62 +980,114 @@ export default {
   color: #007657;
   border-color: rgba(0, 118, 87, 0.2);
 }
+.success-btn:hover { background: #c9ffe7; }
 
 .neutral-btn {
   background: #efecff;
   color: #4231cf;
   border-color: #e2e0fc;
 }
-
-.success-btn:hover {
-  background: #c9ffe7;
-}
-
-.neutral-btn:hover {
-  background: #e3dfff;
-}
+.neutral-btn:hover { background: #e3dfff; }
 
 .danger-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  min-height: 40px;
-  padding: 0 14px;
-  border: 1px solid #f3b8b0;
-  border-radius: 8px;
+  border-color: #f3b8b0;
   background: #fff4f3;
   color: #ba1a1a;
-  font-weight: 800;
+}
+.danger-btn:hover { background: #ffd9d4; }
+
+/* Pagination */
+.pagination-bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  margin-top: 24px;
+  padding-top: 24px;
+  border-top: 1px solid #e2e0fc;
+}
+.page-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 36px;
+  padding: 0 16px;
+  border-radius: 6px;
+  border: 1px solid #e2e0fc;
+  background: #fff;
+  font-weight: 700;
   cursor: pointer;
 }
-
-.danger-btn:hover {
-  background: #ffd9d4;
+.page-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.page-info {
+  font-weight: 600;
+  color: #464555;
 }
 
-.comment-card {
-  grid-template-columns: 60px minmax(0, 1fr);
-}
-
-.comment-marker {
-  width: 60px;
-  height: 60px;
-  border-radius: 8px;
-  font-size: 28px;
-  align-self: start;
-}
-
-.inline-preview {
-  max-width: 320px;
-  border-radius: 8px;
-  overflow: hidden;
+/* Logs Table */
+.logs-container {
+  background: #fff;
   border: 1px solid #e2e0fc;
+  border-radius: 8px;
+  overflow-x: auto;
+}
+.logs-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.logs-table th, .logs-table td {
+  padding: 14px 16px;
+  text-align: left;
+  border-bottom: 1px solid #e2e0fc;
+}
+.logs-table th {
+  background: #f5f2ff;
+  font-weight: 700;
+  color: #4231cf;
+  font-size: 13px;
+  text-transform: uppercase;
+}
+.logs-table td {
+  font-size: 14px;
 }
 
-.inline-preview img {
-  display: block;
+/* Modals */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+.modal-content {
+  background: #fff;
+  padding: 24px;
+  border-radius: 12px;
   width: 100%;
-  height: auto;
+  max-width: 400px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.1);
+}
+.modal-content h3 {
+  margin: 0 0 12px;
+}
+.modal-content textarea {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #e2e0fc;
+  border-radius: 8px;
+  font-family: inherit;
+  margin-bottom: 16px;
+  resize: vertical;
+}
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
 }
 
 .state-panel {
@@ -747,7 +1097,6 @@ export default {
   align-items: center;
   gap: 14px;
 }
-
 .spinner {
   width: 40px;
   height: 40px;
@@ -756,29 +1105,9 @@ export default {
   border-left-color: #4231cf;
   animation: spin 0.9s linear infinite;
 }
-
 @keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
+  to { transform: rotate(360deg); }
 }
-
-.error-text {
-  color: #ba1a1a;
-  font-weight: 800;
-}
-
-.retry-btn {
-  min-height: 44px;
-  padding: 0 18px;
-  border: none;
-  border-radius: 8px;
-  background: #4231cf;
-  color: #ffffff;
-  font-weight: 800;
-  cursor: pointer;
-}
-
 .empty-state {
   padding: 28px;
   border-radius: 8px;
@@ -789,23 +1118,9 @@ export default {
 }
 
 @media (max-width: 900px) {
-  .admin-page {
-    padding: 24px 16px 96px;
-  }
-
-  .hero-band,
-  .control-bar {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  .stats-grid,
-  .item-card {
-    grid-template-columns: 1fr;
-  }
-
-  .item-media {
-    min-height: 180px;
-  }
+  .admin-page { padding: 24px 16px 96px; }
+  .item-card { grid-template-columns: auto 1fr; }
+  .item-media { display: none; }
+  .filters-bar { flex-direction: column; }
 }
 </style>

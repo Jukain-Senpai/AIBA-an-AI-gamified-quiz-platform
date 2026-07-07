@@ -36,6 +36,18 @@ model User {
   comments Comment[] @relation("UserComments")
   postLikes PostLike[]
   commentLikes CommentLike[]
+  moderationLogs ModerationLog[] @relation("AdminLogs")
+}
+
+model ModerationLog {
+  id          Int      @id @default(autoincrement())
+  adminId     Int
+  admin       User     @relation("AdminLogs", fields: [adminId], references: [id])
+  targetType  String   // 'quiz', 'post', 'comment'
+  targetId    Int
+  action      String   // 'APPROVED', 'REJECTED'
+  reason      String?
+  createdAt   DateTime @default(now())
 }
 
 model Skill {
