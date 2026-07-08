@@ -4,43 +4,28 @@
       <section class="auth-hero">
         <div class="hero-copy">
           <img src="/src/assets/Logo.svg" class="brand-mark" alt="AIBA" />
-          <h1>Welcome Back</h1>
-          <p>Continue your learning streak, pick up your skills, and jump back into the platform.</p>
+          <h1>New Password</h1>
+          <p>Choose a strong new password and confirm it to finish resetting your account.</p>
         </div>
       </section>
 
       <section class="auth-panel">
         <div class="panel-inner">
           <div class="panel-header">
-            <h2>Sign In</h2>
-            <p>Use your email or username to get back in.</p>
+            <h2>Set New Password</h2>
+            <p>Enter and confirm your new password below.</p>
           </div>
 
-          <form class="auth-form" @submit.prevent="handleLogin">
+          <form class="auth-form" @submit.prevent="handleReset">
             <div class="field">
-              <label for="email">Email or Username</label>
-              <input
-                id="email"
-                v-model="email"
-                type="text"
-                placeholder="explorer@aiba.com or KnightScholar"
-                autocomplete="username"
-                required
-              />
-            </div>
-
-            <div class="field">
-              <div class="field-label-row">
-                <label for="password">Password</label>
-                <router-link to="/forgot-password" class="forgot-link">Forgot your password?</router-link>
-              </div>
+              <label for="password">New Password</label>
               <div class="password-field">
                 <input
                   id="password"
                   v-model="password"
                   :type="showPassword ? 'text' : 'password'"
-                  placeholder="Enter your password"
-                  autocomplete="current-password"
+                  placeholder="Enter new password"
+                  autocomplete="new-password"
                   required
                 />
                 <button type="button" class="toggle-btn" @click="showPassword = !showPassword" :aria-label="showPassword ? 'Hide password' : 'Show password'">
@@ -49,16 +34,34 @@
               </div>
             </div>
 
+            <div class="field">
+              <label for="confirmPassword">Confirm New Password</label>
+              <div class="password-field">
+                <input
+                  id="confirmPassword"
+                  v-model="confirmPassword"
+                  :type="showConfirmPassword ? 'text' : 'password'"
+                  placeholder="Re-enter new password"
+                  autocomplete="new-password"
+                  required
+                />
+                <button type="button" class="toggle-btn" @click="showConfirmPassword = !showConfirmPassword" :aria-label="showConfirmPassword ? 'Hide password' : 'Show password'">
+                  <span class="material-symbols-outlined">{{ showConfirmPassword ? 'visibility_off' : 'visibility' }}</span>
+                </button>
+              </div>
+            </div>
+
             <p v-if="error" class="error">{{ error }}</p>
+            <p v-if="success" class="success">{{ success }}</p>
 
             <button type="submit" class="primary-btn" :disabled="submitting">
-              {{ submitting ? 'Signing In...' : 'Sign In' }}
+              {{ submitting ? 'Updating Password...' : 'Update Password' }}
             </button>
           </form>
 
           <p class="auth-footer">
-            New here?
-            <router-link to="/register">Create account</router-link>
+            Back to
+            <router-link to="/login">Sign in</router-link>
           </p>
         </div>
       </section>
@@ -70,29 +73,57 @@
 import api from '../services/api';
 
 export default {
-  name: 'Login',
+  name: 'ResetPassword',
   data() {
     return {
       email: '',
+      code: '',
       password: '',
+      confirmPassword: '',
       showPassword: false,
+      showConfirmPassword: false,
       submitting: false,
       error: null,
+      success: null,
     };
   },
+  created() {
+    this.email = this.$route.query.email || '';
+    this.code = this.$route.query.code || '';
+
+    if (!this.email || !this.code) {
+      this.$router.replace('/forgot-password');
+    }
+  },
   methods: {
-    async handleLogin() {
-      this.submitting = true;
+    async handleReset() {
       this.error = null;
+      this.success = null;
+
+      if (this.password !== this.confirmPassword) {
+        this.error = 'Passwords do not match.';
+        return;
+      }
+
+      if (this.password.length < 6) {
+        this.error = 'Password must be at least 6 characters.';
+        return;
+      }
+
+      this.submitting = true;
+
       try {
-        const res = await api.post('/auth/login', {
+        await api.post('/auth/reset-password', {
           email: this.email,
+          code: this.code,
           password: this.password,
         });
-        localStorage.setItem('token', res.data.token);
-        this.$router.push('/dashboard');
+        this.success = 'Password updated successfully. Redirecting to sign in...';
+        setTimeout(() => {
+          this.$router.push('/login');
+        }, 1500);
       } catch (err) {
-        this.error = err.response?.data?.message || 'Login failed.';
+        this.error = err.response?.data?.error || 'Failed to reset password.';
       } finally {
         this.submitting = false;
       }
@@ -197,25 +228,6 @@ export default {
   font-size: 14px;
   font-weight: 700;
   color: #464555;
-}
-
-.field-label-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-}
-
-.forgot-link {
-  font-family: 'Nunito Sans', sans-serif;
-  font-size: 14px;
-  font-weight: 700;
-  color: #4231cf;
-  text-decoration: none;
-}
-
-.forgot-link:hover {
-  text-decoration: underline;
 }
 
 .field input {
@@ -323,6 +335,16 @@ export default {
   border-radius: 12px;
   background: #ffdad6;
   color: #ba1a1a;
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.success {
+  margin: 0 0 16px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: #d7f8ea;
+  color: #0d6b45;
   font-size: 14px;
   line-height: 1.4;
 }

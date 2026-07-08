@@ -27,6 +27,9 @@ model User {
   path      String   @default("Unassigned")
   avatar    String   @default("NeonKnight_M.jpg")
   winStreak Int      @default(0)
+
+  resetCode       String?
+  resetCodeExpiry DateTime?
   
 
   quizzes  Quiz[]    @relation("QuizCreator")

@@ -107,6 +107,8 @@ export default {
         '/': 'Home',
         '/login': 'Login Page',
         '/register': 'Register',
+        '/forgot-password': 'Forgot Password',
+        '/reset-password': 'Reset Password',
         '/dashboard': 'Dashboard',
         '/quizzes': 'Quizzes',
         '/admin': 'Admin',

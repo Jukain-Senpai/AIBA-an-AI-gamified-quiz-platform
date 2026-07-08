@@ -3,7 +3,11 @@ const router = express.Router();
 
 const {
      register,
-     login, } = require('../controllers/auth.controller');
+     login,
+     forgotPassword,
+     verifyResetCode,
+     resetUserPassword,
+} = require('../controllers/auth.controller');
 
      const protect = require("../middleware/auth.middleware");
 /**
@@ -58,6 +62,9 @@ router.post("/register", register);
  *         description: Login successful
  */
 router.post("/login", login);
+router.post("/forgot-password", forgotPassword);
+router.post("/verify-reset-code", verifyResetCode);
+router.post("/reset-password", resetUserPassword);
 
 /**
  * @swagger

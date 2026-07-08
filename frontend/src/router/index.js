@@ -3,6 +3,8 @@ import { createRouter, createWebHistory } from "vue-router";
 import Landing from "../views/Landing.vue";
 import Login from "../views/Login.vue";
 import Register from "../views/Register.vue";
+import ForgotPassword from "../views/ForgotPassword.vue";
+import ResetPassword from "../views/ResetPassword.vue";
 import Dashboard from "../views/Dashboard.vue";
 import QuizList from "../views/QuizList.vue";
 import QuizDetail from "../views/QuizDetail.vue";
@@ -21,6 +23,8 @@ const routes = [
 
     { path: "/login", component: Login },
     { path: "/register", component: Register },
+    { path: "/forgot-password", component: ForgotPassword },
+    { path: "/reset-password", component: ResetPassword },
     { path: "/dashboard", component: Dashboard },
     { path: "/quizzes", component: QuizList },
     { path: "/quizzes/:id", component: QuizDetail },
@@ -40,7 +44,7 @@ const router = createRouter({
 });
 
 router.beforeEach((to, from, next) => {
-    const publicPages = ['/', '/login', '/register'];
+    const publicPages = ['/', '/login', '/register', '/forgot-password', '/reset-password'];
     const loggedIn = localStorage.getItem('token');
     const userRole = getCurrentUserRole();
 

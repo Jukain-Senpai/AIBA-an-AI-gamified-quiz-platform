@@ -88,16 +88,20 @@
             <div class="two-col-grid">
               <div class="form-group">
                 <label>Difficulty Level</label>
-                <div class="faux-select">
-                  <select v-model="quiz.difficulty" class="invisible-select">
-                    <option value="Beginner">Beginner</option>
-                    <option value="Intermediate">Intermediate</option>
-                    <option value="Advanced">Advanced</option>
-                  </select>
-                  <div class="stars-display">
-                    <span v-for="n in 3" :key="n" class="material-symbols-outlined star-icon" :class="{'filled': n <= getDifficultyStars(quiz.difficulty)}">star</span>
-                  </div>
-                  <span class="faux-select-text">{{ quiz.difficulty }}</span>
+                <div class="difficulty-picker" role="radiogroup" aria-label="Difficulty level">
+                  <button
+                    v-for="n in 3"
+                    :key="n"
+                    type="button"
+                    class="difficulty-star-btn"
+                    :class="{ filled: n <= getDifficultyStars(quiz.difficulty) }"
+                    :aria-pressed="n <= getDifficultyStars(quiz.difficulty)"
+                    :aria-label="difficultyLabel(n)"
+                    @click="setDifficulty(n)"
+                  >
+                    <span class="material-symbols-outlined star-icon">star</span>
+                  </button>
+                  <span class="difficulty-text">{{ quiz.difficulty }}</span>
                 </div>
               </div>
 
@@ -485,6 +489,14 @@ export default {
       if (diff === 'Advanced') return 3;
       return 1;
     },
+    difficultyLabel(level) {
+      if (level === 1) return 'Beginner';
+      if (level === 2) return 'Intermediate';
+      return 'Advanced';
+    },
+    setDifficulty(level) {
+      this.quiz.difficulty = this.difficultyLabel(level);
+    },
     addQuestion() {
       this.questions.push({
         text: "",
@@ -832,24 +844,45 @@ export default {
 }
 
 /* Faux Select & Slider (Placeholders) */
-.faux-select {
-  position: relative;
+.difficulty-picker {
   background: var(--surface-low);
   border: 1px solid var(--border-color);
   border-radius: 12px;
-  padding: 16px;
+  padding: 14px 16px;
   display: flex;
   align-items: center;
+  gap: 10px;
 }
-.invisible-select {
-  position: absolute;
-  top: 0; left: 0; width: 100%; height: 100%;
-  opacity: 0; cursor: pointer;
+.difficulty-star-btn {
+  border: 0;
+  background: transparent;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: var(--text-outline);
+  transition: transform 0.15s ease, color 0.15s ease;
 }
-.stars-display { display: flex; gap: 4px; }
-.star-icon { font-variation-settings: 'FILL' 0; color: var(--text-outline); }
-.star-icon.filled { font-variation-settings: 'FILL' 1; color: var(--secondary); }
-.faux-select-text { margin-left: auto; font-family: 'Nunito Sans', sans-serif; font-weight: 600; color: var(--text-muted); }
+.difficulty-star-btn:hover {
+  transform: translateY(-1px);
+}
+.difficulty-star-btn .star-icon {
+  font-variation-settings: 'FILL' 0;
+  font-size: 28px;
+}
+.difficulty-star-btn.filled {
+  color: var(--secondary);
+}
+.difficulty-star-btn.filled .star-icon {
+  font-variation-settings: 'FILL' 1;
+}
+.difficulty-text {
+  margin-left: auto;
+  font-family: 'Nunito Sans', sans-serif;
+  font-weight: 600;
+  color: var(--text-muted);
+}
 
 .slider-container {
   background: var(--surface-low); border: 1px solid var(--border-color);

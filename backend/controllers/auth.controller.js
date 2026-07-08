@@ -1,7 +1,11 @@
 const jwt = require("jsonwebtoken");
-const { registerUser,
+const {
+    registerUser,
     loginUser,
- } = require("../services/auth.service");
+    requestPasswordReset,
+    verifyPasswordResetCode,
+    resetPassword,
+} = require("../services/auth.service");
 
 const testAuth = (req, res) => {
     res.json({
@@ -55,8 +59,44 @@ const login = async (req, res) => {
     }
 };
 
+const forgotPassword = async (req, res) => {
+    try {
+        const result = await requestPasswordReset(req.body);
+        res.json(result);
+    } catch (error) {
+        res.status(400).json({
+            error: error.message,
+        });
+    }
+};
+
+const verifyResetCode = async (req, res) => {
+    try {
+        const result = await verifyPasswordResetCode(req.body);
+        res.json(result);
+    } catch (error) {
+        res.status(400).json({
+            error: error.message,
+        });
+    }
+};
+
+const resetUserPassword = async (req, res) => {
+    try {
+        const result = await resetPassword(req.body);
+        res.json(result);
+    } catch (error) {
+        res.status(400).json({
+            error: error.message,
+        });
+    }
+};
+
 module.exports = {
     testAuth,
     register,
     login,
+    forgotPassword,
+    verifyResetCode,
+    resetUserPassword,
 };

@@ -59,17 +59,60 @@
         </div>
       </div>
 
-      <!-- Category Tabs -->
-      <div class="category-tabs">
-        <button
-          v-for="cat in categories"
-          :key="cat.value"
-          class="tab-btn"
-          :class="{ active: selectedCategory === cat.value }"
-          @click="selectCategory(cat.value)"
-        >
-          {{ cat.label }}
-        </button>
+      <!-- Controls Bar -->
+      <div class="controls-bar">
+        <!-- Category Tabs -->
+        <div class="category-tabs">
+          <button
+            v-for="cat in categories"
+            :key="cat.value"
+            class="tab-btn"
+            :class="{ active: selectedCategory === cat.value }"
+            @click="selectCategory(cat.value)"
+          >
+            {{ cat.label }}
+          </button>
+        </div>
+
+        <!-- Search and Sort -->
+        <div class="search-sort-group">
+          <div class="search-wrap">
+            <span class="material-symbols-outlined search-icon">search</span>
+            <input 
+              type="text" 
+              v-model="searchQuery" 
+              placeholder="Search posts..." 
+              @keyup.enter="fetchPosts(1)"
+            />
+          </div>
+          <div class="sort-container">
+            <button class="sort-trigger" type="button" @click.stop="toggleSortDropdown">
+              <span class="material-symbols-outlined sort-icon">sort</span>
+              <span>{{ sortBy === 'popular' ? 'Most Popular' : 'Newest' }}</span>
+              <span class="material-symbols-outlined chevron-icon" :class="{ open: showSortDropdown }">expand_more</span>
+            </button>
+            <transition name="dropdown-fade">
+              <div class="custom-dropdown-menu" v-if="showSortDropdown">
+                <button 
+                  class="dropdown-item" 
+                  type="button"
+                  :class="{ active: sortBy === 'popular' }" 
+                  @click="selectSort('popular')"
+                >
+                  Most Popular
+                </button>
+                <button 
+                  class="dropdown-item" 
+                  type="button"
+                  :class="{ active: sortBy === 'newest' }" 
+                  @click="selectSort('newest')"
+                >
+                  Newest
+                </button>
+              </div>
+            </transition>
+          </div>
+        </div>
       </div>
 
       <!-- Main Layout -->
@@ -79,15 +122,15 @@
         <div class="posts-col">
 
           <!-- Empty State -->
-          <div v-if="filteredPosts.length === 0" class="empty-state-card">
+          <div v-if="posts.length === 0" class="empty-state-card">
             <img src="/src/assets/icons/ui/post_add.svg" class="icon-lg icon-muted" alt="" />
-            <p>No posts yet in this category. Be the first to start a discussion!</p>
+            <p>No posts match your filters. Be the first to start a discussion!</p>
             <button class="btn-primary" @click="$router.push('/forum/create')">Create a Post</button>
           </div>
 
           <!-- Post Cards -->
           <div
-            v-for="post in filteredPosts"
+            v-for="post in posts"
             :key="post.id"
             class="post-card"
             @click="$router.push(`/forum/post/${post.id}`)"
@@ -131,6 +174,17 @@
                 </div>
               </div>
             </div>
+          </div>
+
+          <!-- Pagination -->
+          <div class="pagination-bar" v-if="totalPages > 1">
+            <button class="page-btn" :disabled="page <= 1" @click="fetchPosts(page - 1)">
+              <span class="material-symbols-outlined">chevron_left</span> Previous
+            </button>
+            <span class="page-info">Page {{ page }} of {{ totalPages }}</span>
+            <button class="page-btn" :disabled="page >= totalPages" @click="fetchPosts(page + 1)">
+              Next <span class="material-symbols-outlined">chevron_right</span>
+            </button>
           </div>
 
         </div>
@@ -191,6 +245,13 @@ export default {
       error: null,
       posts: [],
       selectedCategory: 'All',
+      searchQuery: '',
+      sortBy: 'popular',
+      showSortDropdown: false,
+      page: 1,
+      limit: 10,
+      totalPages: 1,
+      totalPostsCount: 0,
       categories: [
         { label: 'All', value: 'All' },
         { label: '💬 General', value: 'General' },
@@ -202,10 +263,6 @@ export default {
     };
   },
   computed: {
-    filteredPosts() {
-      if (this.selectedCategory === 'All') return this.posts;
-      return this.posts.filter(p => p.category === this.selectedCategory);
-    },
     hotPosts() {
       return this.posts.filter(p => p.upvotes >= 5).length;
     },
@@ -223,12 +280,24 @@ export default {
     },
   },
   methods: {
-    async fetchPosts() {
+    async fetchPosts(pageNum = 1) {
       this.loading = true;
       this.error = null;
+      this.page = pageNum;
       try {
-        const res = await api.get('/posts');
-        this.posts = res.data;
+        const res = await api.get('/posts', {
+          params: {
+            page: this.page,
+            limit: this.limit,
+            category: this.selectedCategory,
+            search: this.searchQuery,
+            sortBy: this.sortBy,
+          }
+        });
+        // API now returns { items, total, page, totalPages }
+        this.posts = res.data.items || [];
+        this.totalPages = res.data.totalPages || 1;
+        this.totalPostsCount = res.data.total || 0;
       } catch (err) {
         if (err.response?.status === 401) {
           localStorage.removeItem('token');
@@ -254,10 +323,24 @@ export default {
     },
     selectCategory(cat) {
       this.selectedCategory = cat;
+      this.searchQuery = '';
+      this.fetchPosts(1);
     },
     searchTag(tag) {
       this.selectedCategory = 'All';
-      // Future: filter by tag
+      this.searchQuery = tag;
+      this.fetchPosts(1);
+    },
+    toggleSortDropdown() {
+      this.showSortDropdown = !this.showSortDropdown;
+    },
+    selectSort(option) {
+      this.sortBy = option;
+      this.showSortDropdown = false;
+      this.fetchPosts(1);
+    },
+    closeSortDropdown() {
+      this.showSortDropdown = false;
     },
     getCategoryEmoji(category) {
       const map = {
@@ -281,6 +364,13 @@ export default {
   },
   mounted() {
     this.fetchPosts();
+    window.addEventListener('click', this.closeSortDropdown);
+  },
+  beforeUnmount() {
+    window.removeEventListener('click', this.closeSortDropdown);
+  },
+  beforeDestroy() {
+    window.removeEventListener('click', this.closeSortDropdown);
   },
 };
 </script>
@@ -479,6 +569,196 @@ export default {
   color: white;
   border-color: #4231cf;
   box-shadow: 0 4px 12px rgba(66, 49, 207, 0.25);
+}
+
+/* Search and Sort */
+.controls-bar {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.search-sort-group {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.search-wrap {
+  flex: 1;
+  min-width: 200px;
+  display: flex;
+  align-items: center;
+  background: white;
+  border-radius: 9999px;
+  padding: 0 16px;
+  border: 1px solid rgba(200, 196, 216, 0.5);
+  box-shadow: 0 4px 12px rgba(91, 79, 232, 0.05);
+  transition: all 0.2s;
+}
+
+.search-wrap:focus-within {
+  border-color: #4231cf;
+  box-shadow: 0 4px 12px rgba(66, 49, 207, 0.1);
+}
+
+.search-icon {
+  color: #777586;
+  font-size: 20px;
+  margin-right: 8px;
+}
+
+.search-wrap input {
+  flex: 1;
+  border: none;
+  background: transparent;
+  padding: 12px 0;
+  outline: none;
+  font-family: inherit;
+  color: #1a1a2e;
+}
+
+.sort-container {
+  position: relative;
+  display: inline-block;
+}
+
+.sort-trigger {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: white;
+  border-radius: 9999px;
+  padding: 12px 20px;
+  border: 1px solid rgba(200, 196, 216, 0.5);
+  box-shadow: 0 4px 12px rgba(91, 79, 232, 0.05);
+  color: #464555;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.sort-trigger:hover {
+  background: #fcfbff;
+  border-color: #c4c0ff;
+}
+
+.sort-trigger:focus {
+  border-color: #4231cf;
+  outline: none;
+}
+
+.sort-icon {
+  color: #777586;
+  font-size: 20px;
+}
+
+.chevron-icon {
+  color: #777586;
+  font-size: 18px;
+  transition: transform 0.2s ease;
+}
+
+.chevron-icon.open {
+  transform: rotate(180deg);
+}
+
+.custom-dropdown-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  background: white;
+  border-radius: 12px;
+  border: 1px solid rgba(200, 196, 216, 0.5);
+  box-shadow: 0 10px 25px rgba(91, 79, 232, 0.15);
+  padding: 6px;
+  min-width: 160px;
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.dropdown-item {
+  background: none;
+  border: none;
+  padding: 10px 14px;
+  border-radius: 8px;
+  text-align: left;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  color: #464555;
+  cursor: pointer;
+  transition: all 0.2s;
+  width: 100%;
+}
+
+.dropdown-item:hover {
+  background: #efecff;
+  color: #4231cf;
+}
+
+.dropdown-item.active {
+  background: #4231cf;
+  color: white;
+  font-weight: 600;
+}
+
+/* Dropdown transition animation */
+.dropdown-fade-enter-active,
+.dropdown-fade-leave-active {
+  transition: opacity 0.15s ease, transform 0.15s ease;
+}
+
+.dropdown-fade-enter-from,
+.dropdown-fade-leave-to {
+  opacity: 0;
+  transform: translateY(-8px);
+}
+
+/* Pagination */
+.pagination-bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid rgba(200, 196, 216, 0.3);
+}
+
+.page-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 36px;
+  padding: 0 16px;
+  border-radius: 6px;
+  border: 1px solid rgba(200, 196, 216, 0.5);
+  background: white;
+  font-weight: 700;
+  color: #4231cf;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.page-btn:hover:not(:disabled) {
+  background: #efecff;
+}
+
+.page-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  color: #777586;
+}
+
+.page-info {
+  font-weight: 600;
+  color: #464555;
+  font-size: 14px;
 }
 
 /* Main Layout */

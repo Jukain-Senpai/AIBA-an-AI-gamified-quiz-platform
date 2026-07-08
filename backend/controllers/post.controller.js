@@ -51,10 +51,14 @@ const createPost = async (req, res) => {
 
 const getAllPosts = async (req, res) => {
     try {
-        const { category, search } = req.query;
+        const { category, search, sortBy, page = 1, limit = 10 } = req.query;
+        const pageNum = Math.max(1, parseInt(page));
+        const limitNum = Math.max(1, parseInt(limit));
+        const skip = (pageNum - 1) * limitNum;
+
         let where = {};
 
-        if (category) {
+        if (category && category !== 'All') {
             where.category = category;
         }
         if (search) {
@@ -64,46 +68,63 @@ const getAllPosts = async (req, res) => {
             ];
         }
 
-        const posts = await prisma.post.findMany({
-            where: isAdminRole(req.user?.role)
-                ? where
-                : {
-                    AND: [
-                        where,
-                        {
-                            OR: [
-                                { moderationStatus: "APPROVED" },
-                                { authorId: req.user.id },
-                            ],
-                        },
-                    ],
-                },
-            select: {
-                id: true,
-                title: true,
-                content: true,
-                image: true,
-                category: true,
-                tags: true,
-                upvotes: true,
-                createdAt: true,
-                updatedAt: true,
-                moderationStatus: true,
-                moderationReason: true,
-                moderatedAt: true,
-                author: {
-                    select: { id: true, username: true, avatar: true, title: true },
-                },
-                _count: {
-                    select: { comments: true },
-                },
-            },
-            orderBy: {
-                createdAt: "desc",
-            },
-        });
+        const finalWhere = isAdminRole(req.user?.role)
+            ? where
+            : {
+                AND: [
+                    where,
+                    {
+                        OR: [
+                            { moderationStatus: "APPROVED" },
+                            { authorId: req.user.id },
+                        ],
+                    },
+                ],
+            };
 
-        res.status(200).json(posts);
+        let orderBy = [];
+        if (sortBy === 'newest') {
+            orderBy = [{ createdAt: "desc" }];
+        } else {
+            orderBy = [{ upvotes: "desc" }, { createdAt: "desc" }];
+        }
+
+        const [posts, total] = await Promise.all([
+            prisma.post.findMany({
+                where: finalWhere,
+                select: {
+                    id: true,
+                    title: true,
+                    content: true,
+                    image: true,
+                    category: true,
+                    tags: true,
+                    upvotes: true,
+                    createdAt: true,
+                    updatedAt: true,
+                    moderationStatus: true,
+                    moderationReason: true,
+                    moderatedAt: true,
+                    author: {
+                        select: { id: true, username: true, avatar: true, title: true, level: true },
+                    },
+                    _count: {
+                        select: { comments: true },
+                    },
+                },
+                orderBy,
+                skip,
+                take: limitNum,
+            }),
+            prisma.post.count({ where: finalWhere })
+        ]);
+
+        res.status(200).json({
+            items: posts,
+            total,
+            page: pageNum,
+            totalPages: Math.ceil(total / limitNum) || 1
+        });
     } catch (error) {
         console.error(error);
         res.status(500).json({ message: "Failed to fetch posts" });

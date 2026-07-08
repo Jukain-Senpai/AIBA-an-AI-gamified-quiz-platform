@@ -4,61 +4,65 @@
       <section class="auth-hero">
         <div class="hero-copy">
           <img src="/src/assets/Logo.svg" class="brand-mark" alt="AIBA" />
-          <h1>Welcome Back</h1>
-          <p>Continue your learning streak, pick up your skills, and jump back into the platform.</p>
+          <h1>Reset Access</h1>
+          <p>Enter your account email and we'll send you a verification code to recover your password.</p>
         </div>
       </section>
 
       <section class="auth-panel">
         <div class="panel-inner">
           <div class="panel-header">
-            <h2>Sign In</h2>
-            <p>Use your email or username to get back in.</p>
+            <h2>Forgot Password</h2>
+            <p>We'll email you a 5-character code to verify your identity.</p>
           </div>
 
-          <form class="auth-form" @submit.prevent="handleLogin">
+          <form class="auth-form" @submit.prevent="handleVerify">
             <div class="field">
-              <label for="email">Email or Username</label>
+              <label for="email">Email Address</label>
               <input
                 id="email"
                 v-model="email"
-                type="text"
-                placeholder="explorer@aiba.com or KnightScholar"
-                autocomplete="username"
+                type="email"
+                placeholder="explorer@aiba.com"
+                autocomplete="email"
                 required
               />
             </div>
 
+            <button
+              type="button"
+              class="secondary-btn"
+              :disabled="sendingCode || !email.trim()"
+              @click="handleSendCode"
+            >
+              {{ sendingCode ? 'Sending Code...' : codeSent ? 'Resend Code' : 'Send Verification Code' }}
+            </button>
+
             <div class="field">
-              <div class="field-label-row">
-                <label for="password">Password</label>
-                <router-link to="/forgot-password" class="forgot-link">Forgot your password?</router-link>
-              </div>
-              <div class="password-field">
-                <input
-                  id="password"
-                  v-model="password"
-                  :type="showPassword ? 'text' : 'password'"
-                  placeholder="Enter your password"
-                  autocomplete="current-password"
-                  required
-                />
-                <button type="button" class="toggle-btn" @click="showPassword = !showPassword" :aria-label="showPassword ? 'Hide password' : 'Show password'">
-                  <span class="material-symbols-outlined">{{ showPassword ? 'visibility_off' : 'visibility' }}</span>
-                </button>
-              </div>
+              <label for="code">Verification Code</label>
+              <input
+                id="code"
+                v-model="code"
+                type="text"
+                placeholder="Enter 5-character code"
+                maxlength="5"
+                autocomplete="one-time-code"
+                :disabled="!codeSent"
+                required
+              />
             </div>
 
             <p v-if="error" class="error">{{ error }}</p>
+            <p v-if="success" class="success">{{ success }}</p>
 
-            <button type="submit" class="primary-btn" :disabled="submitting">
-              {{ submitting ? 'Signing In...' : 'Sign In' }}
+            <button type="submit" class="primary-btn" :disabled="submitting || !codeSent">
+              {{ submitting ? 'Verifying...' : 'Verify Code' }}
             </button>
           </form>
 
           <p class="auth-footer">
-            New here?
-            <router-link to="/register">Create account</router-link>
+            Remember your password?
+            <router-link to="/login">Sign in</router-link>
           </p>
         </div>
       </section>
@@ -70,29 +74,55 @@
 import api from '../services/api';
 
 export default {
-  name: 'Login',
+  name: 'ForgotPassword',
   data() {
     return {
       email: '',
-      password: '',
-      showPassword: false,
+      code: '',
+      codeSent: false,
+      sendingCode: false,
       submitting: false,
       error: null,
+      success: null,
     };
   },
   methods: {
-    async handleLogin() {
+    async handleSendCode() {
+      this.sendingCode = true;
+      this.error = null;
+      this.success = null;
+
+      try {
+        const res = await api.post('/auth/forgot-password', {
+          email: this.email.trim(),
+        });
+        this.codeSent = true;
+        this.success = res.data.message || 'Check your email for the verification code.';
+      } catch (err) {
+        this.error = err.response?.data?.error || 'Failed to send verification code.';
+      } finally {
+        this.sendingCode = false;
+      }
+    },
+    async handleVerify() {
       this.submitting = true;
       this.error = null;
+      this.success = null;
+
       try {
-        const res = await api.post('/auth/login', {
-          email: this.email,
-          password: this.password,
+        await api.post('/auth/verify-reset-code', {
+          email: this.email.trim(),
+          code: this.code.trim(),
         });
-        localStorage.setItem('token', res.data.token);
-        this.$router.push('/dashboard');
+        this.$router.push({
+          path: '/reset-password',
+          query: {
+            email: this.email.trim(),
+            code: this.code.trim().toUpperCase(),
+          },
+        });
       } catch (err) {
-        this.error = err.response?.data?.message || 'Login failed.';
+        this.error = err.response?.data?.error || 'Verification failed.';
       } finally {
         this.submitting = false;
       }
@@ -199,25 +229,6 @@ export default {
   color: #464555;
 }
 
-.field-label-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-}
-
-.forgot-link {
-  font-family: 'Nunito Sans', sans-serif;
-  font-size: 14px;
-  font-weight: 700;
-  color: #4231cf;
-  text-decoration: none;
-}
-
-.forgot-link:hover {
-  text-decoration: underline;
-}
-
 .field input {
   width: 100%;
   height: 56px;
@@ -229,6 +240,17 @@ export default {
   font-size: 16px;
   box-sizing: border-box;
   transition: all 0.2s;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+
+.field input:not([type="email"]) {
+  font-weight: 700;
+}
+
+.field input[type="email"] {
+  letter-spacing: normal;
+  text-transform: none;
 }
 
 .field input:focus {
@@ -238,35 +260,40 @@ export default {
   box-shadow: 0 0 0 4px rgba(66, 49, 207, 0.12);
 }
 
+.field input:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 .field input::placeholder {
   color: #777586;
+  text-transform: none;
+  letter-spacing: normal;
+  font-weight: 400;
 }
 
-.password-field {
-  position: relative;
-}
-
-.password-field input {
-  padding-right: 52px;
-}
-
-.toggle-btn {
-  position: absolute;
-  top: 50%;
-  right: 12px;
-  transform: translateY(-50%);
-  width: 36px;
-  height: 36px;
-  border: none;
-  border-radius: 50%;
+.secondary-btn {
+  width: 100%;
+  height: 48px;
+  margin-bottom: 18px;
+  border: 2px solid #4231cf;
+  border-radius: 9999px;
   background: transparent;
-  color: #777586;
+  color: #4231cf;
+  font-family: 'Nunito Sans', sans-serif;
+  font-size: 15px;
+  font-weight: 800;
   cursor: pointer;
+  transition: all 0.2s;
 }
 
-.toggle-btn:hover {
-  background: #e8e5ff;
-  color: #4231cf;
+.secondary-btn:hover:not(:disabled) {
+  background: #f5f2ff;
+}
+
+.secondary-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 .primary-btn {
@@ -323,6 +350,16 @@ export default {
   border-radius: 12px;
   background: #ffdad6;
   color: #ba1a1a;
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.success {
+  margin: 0 0 16px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: #d7f8ea;
+  color: #0d6b45;
   font-size: 14px;
   line-height: 1.4;
 }

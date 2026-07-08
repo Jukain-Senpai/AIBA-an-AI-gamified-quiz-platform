@@ -1,9 +1,10 @@
-require("dotenv").config();
+const path = require("path");
+require("dotenv").config({ path: path.join(__dirname, ".env") });
 const cors = require("cors");
 const express = require("express");
-const path = require("path");
 const swaggerUi = require("swagger-ui-express");
 const swaggerSpec = require("./swagger");
+const { logEmailMode } = require("./services/email.service");
 
 const app = express();
 app.use(cors({
@@ -42,4 +43,7 @@ app.get("/", (req, res) => {
 
 app.listen(PORT, () => {
     console.log(`Server is running on http://localhost:${PORT}`);
+    logEmailMode().catch((error) => {
+        console.error("[Email] Startup verification failed:", error.message);
+    });
 })
