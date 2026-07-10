@@ -102,29 +102,6 @@
           <span v-if="errors.content" class="field-error">{{ errors.content }}</span>
         </div>
 
-        <!-- Tags -->
-        <div class="form-section">
-          <label class="form-label" for="tag-input">Tags</label>
-          <div class="tags-input-card">
-            <span v-for="tag in form.tags" :key="tag" class="tag-chip">
-              #{{ tag }}
-              <button class="tag-remove" @click="removeTag(tag)" type="button">
-                <img src="/src/assets/icons/navigation/close.svg" class="icon-xs icon-primary" alt="Remove" />
-              </button>
-            </span>
-            <input
-              id="tag-input"
-              type="text"
-              v-model="tagInput"
-              class="tag-input-field"
-              placeholder="Add a tag (press Enter)"
-              @keydown.enter.prevent="addTag"
-              @keydown.comma.prevent="addTag"
-            />
-          </div>
-          <p class="form-hint">Press Enter or comma to add a tag. Max 5 tags.</p>
-        </div>
-
         <!-- Submit Buttons -->
         <div class="form-actions">
           <button type="button" class="btn-cancel" @click="$router.push('/forum')">Cancel</button>
@@ -156,10 +133,8 @@ export default {
         title: '',
         content: '',
         category: '',
-        tags: [],
         image: null,
       },
-      tagInput: '',
       contentFocused: false,
       submitting: false,
       uploadingImage: false,
@@ -191,16 +166,6 @@ export default {
         this.uploadingImage = false;
         event.target.value = null;
       }
-    },
-    addTag() {
-      const tag = this.tagInput.trim().replace(/^#/, '').replace(/,/g, '');
-      if (tag && !this.form.tags.includes(tag) && this.form.tags.length < 5) {
-        this.form.tags.push(tag);
-      }
-      this.tagInput = '';
-    },
-    removeTag(tag) {
-      this.form.tags = this.form.tags.filter(t => t !== tag);
     },
     validate() {
       let valid = true;
@@ -235,7 +200,6 @@ export default {
           content: this.form.content.trim(),
           image: this.form.image,
           category: this.form.category || 'General',
-          tags: this.form.tags,
         });
         if (res.data.moderationStatus === "PENDING") {
           alert("Your post is pending moderation review.");

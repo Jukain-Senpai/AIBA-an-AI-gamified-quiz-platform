@@ -22,6 +22,8 @@ const skillRoutes = require("./routes/skill.routes");
 const aiRoutes = require("./routes/ai.routes");
 const postRoutes = require("./routes/post.routes");
 const commentRoutes = require("./routes/comment.routes");
+const reportIssueRoutes = require("./routes/reportIssue.routes");
+const notificationRoutes = require("./routes/notification.routes");
 const adminRoutes = require("./routes/admin.routes");
 const uploadRoutes = require("./routes/uploads.routes");
 
@@ -33,6 +35,8 @@ app.use("/api/skills", skillRoutes);
 app.use("/api/ai", aiRoutes);
 app.use("/api/posts", postRoutes);
 app.use("/api/comments", commentRoutes);
+app.use("/api/reports", reportIssueRoutes);
+app.use("/api/notifications", notificationRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/uploads", uploadRoutes);
 

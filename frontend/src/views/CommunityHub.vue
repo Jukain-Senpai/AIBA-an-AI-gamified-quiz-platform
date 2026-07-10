@@ -147,9 +147,6 @@
             <div class="post-body">
               <div class="post-meta-top">
                 <span class="post-category-badge" v-if="post.category">{{ getCategoryEmoji(post.category) }} {{ post.category }}</span>
-                <div class="post-tags">
-                  <span v-for="tag in post.tags.slice(0, 3)" :key="tag" class="tag-chip">#{{ tag }}</span>
-                </div>
               </div>
               <h4 class="post-title">{{ post.title }}</h4>
               <span v-if="post.moderationStatus && post.moderationStatus !== 'APPROVED'" class="post-status-badge" :class="post.moderationStatus.toLowerCase()">
@@ -161,7 +158,14 @@
               </div>
               <div class="post-footer">
                 <div class="post-author">
-                  <div class="author-avatar-small">{{ (post.author.username || 'U').charAt(0).toUpperCase() }}</div>
+                  <div class="author-avatar-small">
+                    <img
+                      v-if="post.author?.avatar"
+                      :src="getImageUrl(post.author.avatar)"
+                      :alt="`${post.author.username || 'User'} avatar`"
+                    />
+                    <span v-else>{{ (post.author.username || 'U').charAt(0).toUpperCase() }}</span>
+                  </div>
                   <span class="author-name">{{ post.author.username }}</span>
                   <span class="author-level">LEVEL {{ post.author.level || 1 }}</span>
                   <span class="post-time">• {{ formatTime(post.createdAt) }}</span>
@@ -192,23 +196,6 @@
         <!-- Sidebar -->
         <aside class="sidebar">
 
-          <!-- Trending Topics -->
-          <div class="sidebar-card">
-            <h3 class="sidebar-title">
-              <img src="/src/assets/icons/ui/trending_up.svg" class="icon-sm icon-primary" alt="" />
-              Trending Topics
-            </h3>
-            <div class="tag-cloud">
-              <a
-                v-for="tag in trendingTags"
-                :key="tag"
-                class="tag-cloud-item"
-                href="#"
-                @click.prevent="searchTag(tag)"
-              >#{{ tag }}</a>
-            </div>
-          </div>
-
           <!-- Community Guidelines Quick Links -->
           <div class="sidebar-card">
             <h3 class="sidebar-title">
@@ -218,13 +205,30 @@
             <ul class="quick-links">
               <li>
                 <img src="/src/assets/icons/navigation/chevron_right.svg" class="icon-xs icon-muted" alt="" />
-                <a href="#">Community Guidelines</a>
+                <button type="button" class="link-btn" @click="$router.push('/forum/report')">
+                  Report an Issue
+                </button>
               </li>
               <li>
                 <img src="/src/assets/icons/navigation/chevron_right.svg" class="icon-xs icon-muted" alt="" />
-                <a href="#">Report an Issue</a>
+                <button type="button" class="link-btn" @click="toggleGuidelines">
+                  Community Guidelines
+                </button>
               </li>
             </ul>
+            <transition name="dropdown-fade">
+              <div v-if="showGuidelines" class="guidelines-panel">
+                <h4>Community Guidelines</h4>
+                <ol>
+                  <li>Be respectful. Keep replies constructive and kind.</li>
+                  <li>Use the right category so people can find your post faster.</li>
+                  <li>Share your own work. Avoid reposting or pretending someone else’s content is yours.</li>
+                  <li>Keep discussion focused on learning, study help, and quiz-related topics.</li>
+                  <li>Do not spam links, promotions, or repeated low-effort posts.</li>
+                  <li>When in doubt, make your post helpful and easy for others to read.</li>
+                </ol>
+              </div>
+            </transition>
           </div>
 
         </aside>
@@ -235,7 +239,7 @@
 </template>
 
 <script>
-import api from '../services/api';
+import api, { getImageUrl } from '../services/api';
 
 export default {
   name: 'CommunityHub',
@@ -247,7 +251,8 @@ export default {
       selectedCategory: 'All',
       searchQuery: '',
       sortBy: 'popular',
-      showSortDropdown: false,
+    showSortDropdown: false,
+      showGuidelines: false,
       page: 1,
       limit: 10,
       totalPages: 1,
@@ -266,20 +271,9 @@ export default {
     hotPosts() {
       return this.posts.filter(p => p.upvotes >= 5).length;
     },
-    trendingTags() {
-      const tagMap = {};
-      this.posts.forEach(p => {
-        (p.tags || []).forEach(t => {
-          tagMap[t] = (tagMap[t] || 0) + 1;
-        });
-      });
-      return Object.entries(tagMap)
-        .sort((a, b) => b[1] - a[1])
-        .slice(0, 8)
-        .map(([tag]) => tag);
-    },
   },
   methods: {
+    getImageUrl,
     async fetchPosts(pageNum = 1) {
       this.loading = true;
       this.error = null;
@@ -326,10 +320,8 @@ export default {
       this.searchQuery = '';
       this.fetchPosts(1);
     },
-    searchTag(tag) {
-      this.selectedCategory = 'All';
-      this.searchQuery = tag;
-      this.fetchPosts(1);
+    toggleGuidelines() {
+      this.showGuidelines = !this.showGuidelines;
     },
     toggleSortDropdown() {
       this.showSortDropdown = !this.showSortDropdown;
@@ -953,7 +945,6 @@ export default {
   height: 26px;
   border-radius: 50%;
   background: #e2e0fc;
-  color: #4231cf;
   font-family: 'Nunito Sans', sans-serif;
   font-size: 12px;
   font-weight: 800;
@@ -961,6 +952,19 @@ export default {
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  overflow: hidden;
+}
+
+.author-avatar-small img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.author-avatar-small span {
+  color: #4231cf;
+  line-height: 1;
 }
 
 .author-name {
@@ -1060,6 +1064,24 @@ export default {
   display: flex;
   align-items: center;
   gap: 6px;
+}
+
+.link-btn {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  padding: 0;
+  color: #464555;
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 500;
+  text-align: left;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.link-btn:hover {
+  color: #4231cf;
 }
 
 .quick-links a {

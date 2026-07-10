@@ -28,9 +28,14 @@
       <!-- Original Post -->
       <article class="post-article">
         <div class="post-article-header">
-          <div class="post-author-info">
+            <div class="post-author-info">
             <div class="author-avatar">
-              {{ (post.author.username || 'U').charAt(0).toUpperCase() }}
+              <img
+                v-if="post.author?.avatar"
+                :src="getImageUrl(post.author.avatar)"
+                :alt="`${post.author.username || 'User'} avatar`"
+              />
+              <span v-else>{{ (post.author.username || 'U').charAt(0).toUpperCase() }}</span>
             </div>
             <div>
               <div class="author-name">{{ post.author.username }}</div>
@@ -40,10 +45,9 @@
           <time class="post-time">{{ formatTime(post.createdAt) }}</time>
         </div>
 
-        <!-- Category + Tags -->
-        <div class="post-meta-row" v-if="post.category || post.tags?.length">
+        <!-- Category -->
+        <div class="post-meta-row" v-if="post.category">
           <span class="category-badge" v-if="post.category">{{ getCategoryEmoji(post.category) }} {{ post.category }}</span>
-          <span v-for="tag in post.tags" :key="tag" class="tag-chip">#{{ tag }}</span>
         </div>
 
         <h1 class="post-article-title">{{ post.title }}</h1>
@@ -82,6 +86,10 @@
       <!-- Reply Composer -->
       <section class="reply-composer">
         <h2 class="section-title">Post a Reply</h2>
+        <div v-if="replyTarget" class="reply-target-pill">
+          Replying to {{ replyTarget.author?.username || 'a comment' }}
+          <button type="button" @click="clearReplyTarget">Cancel</button>
+        </div>
         <div class="composer-card" :class="{ focused: composerFocused }">
           <textarea
             v-model="newComment"
@@ -128,46 +136,19 @@
       </section>
 
       <!-- Replies Section -->
-      <section class="replies-section" v-if="post.comments && post.comments.length > 0">
-        <h2 class="section-title">{{ post.comments.length }} {{ post.comments.length === 1 ? 'Reply' : 'Replies' }}</h2>
+      <section class="replies-section" v-if="commentTree.length > 0">
+        <h2 class="section-title">{{ flatCommentCount }} {{ flatCommentCount === 1 ? 'Reply' : 'Replies' }}</h2>
 
         <div class="comment-list">
-          <div
-            v-for="comment in post.comments"
+          <CommentThread
+            v-for="comment in commentTree"
             :key="comment.id"
-            class="comment-card"
-          >
-            <div class="comment-header">
-              <div class="comment-author-info">
-                <div class="comment-avatar">
-                  {{ (comment.author.username || 'U').charAt(0).toUpperCase() }}
-                </div>
-                <div>
-                  <div class="comment-author-name">{{ comment.author.username }}</div>
-                  <span class="comment-author-level">Level {{ comment.author.level || 1 }}</span>
-                </div>
-              </div>
-              <time class="post-time">{{ formatTime(comment.createdAt) }}</time>
-            </div>
-
-            <div v-if="comment.moderationStatus && comment.moderationStatus !== 'APPROVED'" class="comment-status-badge" :class="comment.moderationStatus.toLowerCase()">
-              {{ comment.moderationStatus }} Review
-            </div>
-            <p class="comment-content">{{ comment.content }}</p>
-            <div v-if="comment.image" class="comment-image-container" style="margin-top: 10px; margin-bottom: 12px;">
-              <img :src="getImageUrl(comment.image)" alt="Reply Attachment" style="max-height: 200px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.08);" />
-            </div>
-
-            <div class="comment-actions">
-              <button class="comment-action-btn" @click="toggleCommentUpvote(comment)">
-                <img src="/src/assets/icons/ui/thumb_up.svg" class="icon-xs icon-muted" alt="" />
-                {{ comment.upvotes }}
-              </button>
-              <button class="comment-action-btn" v-if="canDeleteComment(comment)" @click="deleteComment(comment)">
-                <img src="/src/assets/icons/ui/flag.svg" class="icon-xs icon-muted" alt="" />
-              </button>
-            </div>
-          </div>
+            :comment="comment"
+            :can-delete="canDelete"
+            @reply="startReply"
+            @upvote="toggleCommentUpvote"
+            @delete="deleteComment"
+          />
         </div>
       </section>
 
@@ -182,9 +163,11 @@
 
 <script>
 import api, { getImageUrl, uploadImage } from '../services/api';
+import CommentThread from '../components/CommentThread.vue';
 
 export default {
   name: 'Discussion',
+  components: { CommentThread },
   data() {
     return {
       loading: true,
@@ -192,6 +175,7 @@ export default {
       post: null,
       hasUpvoted: false,
       newComment: '',
+      replyTarget: null,
       commentImage: null,
       uploadingImage: false,
       composerFocused: false,
@@ -205,6 +189,28 @@ export default {
     canDelete() {
       if (!this.post || !this.currentUserId) return false;
       return this.post.author.id === this.currentUserId || this.currentUserRole === 'admin';
+    },
+    flatCommentCount() {
+      return Array.isArray(this.post?.comments) ? this.post.comments.length : 0;
+    },
+    commentTree() {
+      const comments = Array.isArray(this.post?.comments) ? this.post.comments : [];
+      const map = new Map();
+      const roots = [];
+
+      comments.forEach((comment) => {
+        map.set(comment.id, { ...comment, replies: [] });
+      });
+
+      map.forEach((comment) => {
+        if (comment.parentCommentId && map.has(comment.parentCommentId)) {
+          map.get(comment.parentCommentId).replies.push(comment);
+        } else {
+          roots.push(comment);
+        }
+      });
+
+      return roots;
     },
   },
   methods: {
@@ -273,6 +279,7 @@ export default {
         const res = await api.post(`/comments/post/${this.post.id}`, {
           content: this.newComment.trim(),
           image: this.commentImage,
+          parentCommentId: this.replyTarget?.id || null,
         });
         this.post.comments.push(res.data);
         if (res.data.moderationStatus === "PENDING") {
@@ -280,11 +287,18 @@ export default {
         }
         this.newComment = '';
         this.commentImage = null;
+        this.replyTarget = null;
       } catch (err) {
         this.commentError = err.response?.data?.message || 'Failed to post reply.';
       } finally {
         this.submittingComment = false;
       }
+    },
+    startReply(comment) {
+      this.replyTarget = comment;
+    },
+    clearReplyTarget() {
+      this.replyTarget = null;
     },
     async toggleCommentUpvote(comment) {
       try {
@@ -315,9 +329,6 @@ export default {
       } catch (err) {
         alert('Failed to delete comment.');
       }
-    },
-    canDeleteComment(comment) {
-      return this.currentUserId && (comment.author.id === this.currentUserId || this.currentUserRole === 'admin');
     },
     getCategoryEmoji(category) {
       const map = {
@@ -451,7 +462,6 @@ export default {
   height: 48px;
   border-radius: 50%;
   background: linear-gradient(135deg, #5b4fe8, #4231cf);
-  color: white;
   font-family: 'Nunito Sans', sans-serif;
   font-size: 20px;
   font-weight: 800;
@@ -460,6 +470,19 @@ export default {
   justify-content: center;
   flex-shrink: 0;
   border: 2px solid rgba(91, 79, 232, 0.2);
+  overflow: hidden;
+}
+
+.author-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.author-avatar span {
+  color: white;
+  line-height: 1;
 }
 
 .author-name {
@@ -712,7 +735,6 @@ export default {
   height: 40px;
   border-radius: 50%;
   background: linear-gradient(135deg, #efecff, #e2e0fc);
-  color: #4231cf;
   font-family: 'Nunito Sans', sans-serif;
   font-size: 16px;
   font-weight: 800;
@@ -720,6 +742,19 @@ export default {
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  overflow: hidden;
+}
+
+.comment-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.comment-avatar span {
+  color: #4231cf;
+  line-height: 1;
 }
 
 .comment-author-name {

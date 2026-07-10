@@ -40,6 +40,9 @@ model User {
   postLikes PostLike[]
   commentLikes CommentLike[]
   moderationLogs ModerationLog[] @relation("AdminLogs")
+  reportIssues ReportIssue[]
+  notifications Notification[] @relation("NotificationRecipient")
+  sentNotifications Notification[] @relation("NotificationActor")
 }
 
 model ModerationLog {
@@ -51,6 +54,19 @@ model ModerationLog {
   action      String   // 'APPROVED', 'REJECTED'
   reason      String?
   createdAt   DateTime @default(now())
+}
+
+model ReportIssue {
+  id          Int      @id @default(autoincrement())
+  subject     String
+  details     String
+  page        String?
+  status      String   @default("OPEN")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  reporterId  Int
+  reporter    User     @relation(fields: [reporterId], references: [id])
 }
 
 model Skill {
@@ -193,7 +209,33 @@ model Comment {
   postId      Int
   post        Post      @relation(fields: [postId], references: [id], onDelete: Cascade)
 
+  parentCommentId Int?
+  parentComment   Comment?  @relation("CommentReplies", fields: [parentCommentId], references: [id], onDelete: Cascade)
+  replies         Comment[] @relation("CommentReplies")
+
   commentLikes CommentLike[]
+}
+
+model Notification {
+  id        Int      @id @default(autoincrement())
+  type      String
+  title     String
+  message   String
+  link      String?
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+  readAt    DateTime?
+
+  recipientId Int
+  recipient   User     @relation("NotificationRecipient", fields: [recipientId], references: [id], onDelete: Cascade)
+
+  actorId Int?
+  actor   User?   @relation("NotificationActor", fields: [actorId], references: [id], onDelete: SetNull)
+
+  targetType String?
+  targetId   Int?
+
+  @@index([recipientId, isRead, createdAt])
 }
 
 model PostLike {

@@ -28,6 +28,10 @@
         <span class="stat-label">Pending Comments</span>
         <strong class="stat-value">{{ stats.pendingComments }}</strong>
       </article>
+      <article class="stat-card">
+        <span class="stat-label">Open Reports</span>
+        <strong class="stat-value">{{ stats.reportIssues || 0 }}</strong>
+      </article>
     </section>
 
     <section class="control-bar">
@@ -147,10 +151,16 @@
           <label for="selectAll">Select All on this page</label>
         </div>
 
-        <article v-for="item in items" :key="item.type + item.id" class="item-card" :class="{'selected': isSelected(item)}">
+        <article
+          v-for="item in items"
+          :key="item.type + item.id"
+          class="item-card"
+          :class="{'selected': isSelected(item)}"
+          @click="openItemModal(item)"
+        >
           
           <div class="item-checkbox">
-            <input type="checkbox" :value="item" v-model="selectedItems" />
+            <input type="checkbox" :value="item" v-model="selectedItems" @click.stop />
           </div>
 
           <div class="item-media" :style="getMediaStyle(item)">
@@ -171,6 +181,9 @@
               <div class="pill-stack">
                 <span v-if="item.type === 'quiz'" class="status-pill" :class="item.isPublished ? 'public' : 'private'">
                   {{ item.isPublished ? 'Public' : 'Private' }}
+                </span>
+                <span v-else-if="item.type === 'report'" class="status-pill moderation open">
+                  OPEN
                 </span>
                 <span class="status-pill moderation" :class="item.moderationStatus?.toLowerCase()">
                   {{ item.moderationStatus || 'APPROVED' }}
@@ -197,30 +210,34 @@
 
             <div class="item-footer">
               <div class="tag-row">
-                <span class="tag" v-if="item.category">{{ item.category }}</span>
-                <span class="tag" v-if="item.difficulty">{{ item.difficulty }}</span>
-                <span v-if="item.type === 'post'" v-for="tag in (item.tags || []).slice(0, 2)" :key="tag" class="tag">{{ tag }}</span>
+                <span class="tag" v-if="item.type === 'quiz' && item.category">{{ item.category }}</span>
+                <span class="tag" v-if="item.type === 'quiz' && item.difficulty">{{ item.difficulty }}</span>
+                <span class="tag" v-if="item.type === 'report'">{{ item.page || 'Issue Report' }}</span>
               </div>
               <div class="action-row">
                 <button
-                  v-if="item.moderationStatus === 'PENDING'"
+                  v-if="item.type !== 'report'"
                   class="success-btn"
                   type="button"
+                  :disabled="item.moderationStatus !== 'PENDING'"
+                  @click.stop
                   @click="moderateItem(item, 'APPROVED')"
                 >
                   <span class="material-symbols-outlined">check</span>
                   Approve
                 </button>
                 <button
-                  v-if="item.moderationStatus === 'PENDING'"
+                  v-if="item.type !== 'report'"
                   class="neutral-btn"
                   type="button"
+                  :disabled="item.moderationStatus !== 'PENDING'"
+                  @click.stop
                   @click="openRejectModal(item, false)"
                 >
                   <span class="material-symbols-outlined">close</span>
                   Reject
                 </button>
-                <button class="danger-btn" type="button" @click="deleteItem(item)">
+                <button class="danger-btn" type="button" @click.stop="deleteItem(item)">
                   <span class="material-symbols-outlined">delete</span>
                   Delete
                 </button>
@@ -267,6 +284,82 @@
       </div>
     </div>
 
+    <div v-if="detailModal.show" class="modal-overlay" @click.self="closeItemModal">
+      <div class="modal-content detail-modal">
+        <div class="detail-header">
+          <div>
+            <p class="detail-kicker">{{ detailModal.item?.type || 'content' }}</p>
+            <h3>{{ getItemTitle(detailModal.item) }}</h3>
+            <p class="detail-meta">by {{ getAuthorLabel(detailModal.item) }} · {{ formatDate(detailModal.item?.createdAt) }}</p>
+          </div>
+          <button class="icon-close-btn" type="button" @click="closeItemModal">
+            <span class="material-symbols-outlined">close</span>
+          </button>
+        </div>
+
+        <div class="detail-scroll">
+          <div class="detail-media" v-if="hasMedia(detailModal.item)">
+            <img v-if="detailModal.item?.type === 'comment' && detailModal.item.image" :src="getImageUrl(detailModal.item.image)" alt="" />
+            <img v-else :src="getImageUrl(detailModal.item?.thumbnail || detailModal.item?.image)" alt="" />
+          </div>
+
+          <div class="detail-meta-stack">
+            <span v-if="detailModal.item?.type === 'quiz'" class="status-pill" :class="detailModal.item.isPublished ? 'public' : 'private'">
+              {{ detailModal.item.isPublished ? 'Public' : 'Private' }}
+            </span>
+            <span class="status-pill moderation" :class="detailModal.item?.moderationStatus?.toLowerCase()">
+              {{ detailModal.item?.moderationStatus || 'APPROVED' }}
+            </span>
+            <span v-if="detailModal.item?.type === 'report'" class="status-pill moderation open">OPEN</span>
+          </div>
+
+          <div v-if="detailModal.item?.moderationStatus === 'PENDING' && detailModal.item?.moderationReason" class="ai-warning">
+            <span class="material-symbols-outlined warning-icon">warning</span>
+            <div class="warning-text">
+              <strong>AI Auto-Flag:</strong> {{ detailModal.item.moderationReason }}
+            </div>
+          </div>
+
+          <div class="detail-content">
+            <p>{{ getItemContent(detailModal.item) }}</p>
+          </div>
+
+          <p v-if="detailModal.item?.type === 'report' && detailModal.item?.page" class="moderation-note">
+            Reported from: {{ detailModal.item.page }}
+          </p>
+
+          <div v-if="detailModal.item?.type === 'comment' && detailModal.item?.image" class="detail-preview">
+            <img :src="getImageUrl(detailModal.item.image)" alt="Comment image" />
+          </div>
+        </div>
+
+        <div class="detail-actions">
+          <button
+            v-if="detailModal.item?.type !== 'report' && detailModal.item?.moderationStatus === 'PENDING'"
+            class="success-btn"
+            type="button"
+            @click="moderateFromDetail('APPROVED')"
+          >
+            <span class="material-symbols-outlined">check</span>
+            Approve
+          </button>
+          <button
+            v-if="detailModal.item?.type !== 'report' && detailModal.item?.moderationStatus === 'PENDING'"
+            class="neutral-btn"
+            type="button"
+            @click="openRejectModal(detailModal.item, false)"
+          >
+            <span class="material-symbols-outlined">close</span>
+            Reject
+          </button>
+          <button class="danger-btn" type="button" @click="deleteFromDetail">
+            <span class="material-symbols-outlined">delete</span>
+            Delete
+          </button>
+        </div>
+      </div>
+    </div>
+
   </div>
 </template>
 
@@ -285,12 +378,14 @@ export default {
         { key: "quizzes", label: "Quizzes" },
         { key: "posts", label: "Posts" },
         { key: "comments", label: "Comments" },
+        { key: "reports", label: "Report Issues" },
         { key: "logs", label: "Audit Logs" },
       ],
       stats: {
         pendingQuizzes: 0,
         pendingPosts: 0,
-        pendingComments: 0
+        pendingComments: 0,
+        reportIssues: 0
       },
       
       // Pagination & Filters
@@ -312,6 +407,10 @@ export default {
         isBulk: false,
         item: null,
         reason: ""
+      },
+      detailModal: {
+        show: false,
+        item: null,
       }
     };
   },
@@ -346,18 +445,21 @@ export default {
       if (item.type === 'quiz') return item.title;
       if (item.type === 'post') return item.title;
       if (item.type === 'comment') return `Comment on ${item.post?.title || 'a post'}`;
+      if (item.type === 'report') return item.subject;
       return "Untitled";
     },
     getItemContent(item) {
       if (item.type === 'quiz') return item.description || 'No description provided.';
       if (item.type === 'post') return item.content;
       if (item.type === 'comment') return item.content;
+      if (item.type === 'report') return item.details;
       return "";
     },
     getIconForType(type) {
       if (type === 'quiz') return 'quiz';
       if (type === 'post') return 'article';
       if (type === 'comment') return 'comment';
+      if (type === 'report') return 'report_problem';
       return 'help';
     },
     hasMedia(item) {
@@ -372,6 +474,13 @@ export default {
     },
     isSelected(item) {
       return this.selectedItems.some(i => i.id === item.id && i.type === item.type);
+    },
+    openItemModal(item) {
+      this.detailModal = { show: true, item };
+    },
+    closeItemModal() {
+      this.detailModal.show = false;
+      this.detailModal.item = null;
     },
     toggleSelectAll(e) {
       if (e.target.checked) {
@@ -446,6 +555,7 @@ export default {
           quiz: `/quizzes/${item.id}`,
           post: `/posts/${item.id}`,
           comment: `/comments/${item.id}`,
+          report: `/reports/${item.id}`,
         };
         await api.delete(routes[item.type]);
         await this.refreshAll();
@@ -465,6 +575,16 @@ export default {
         alert(err.response?.data?.message || "Failed to update moderation status");
         console.error(err);
       }
+    },
+    async moderateFromDetail(status) {
+      if (!this.detailModal.item) return;
+      await this.moderateItem(this.detailModal.item, status);
+      this.closeItemModal();
+    },
+    async deleteFromDetail() {
+      if (!this.detailModal.item) return;
+      await this.deleteItem(this.detailModal.item);
+      this.closeItemModal();
     },
     async bulkModerate(status, reason = null) {
       if (this.selectedItems.length === 0) return;
@@ -766,6 +886,10 @@ export default {
   padding: 14px;
   box-shadow: 0 4px 12px rgba(66, 49, 207, 0.04);
   transition: all 0.2s;
+  min-height: 260px;
+  max-height: 260px;
+  overflow: hidden;
+  cursor: pointer;
 }
 
 .item-card.selected {
@@ -823,6 +947,7 @@ export default {
   display: flex;
   flex-direction: column;
   gap: 12px;
+  overflow: hidden;
 }
 
 .item-topline {
@@ -844,6 +969,10 @@ export default {
   font-size: 18px;
   font-weight: 800;
   line-height: 1.3;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
 .item-meta {
@@ -858,6 +987,11 @@ export default {
   line-height: 1.55;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  min-height: 52px;
 }
 
 .ai-warning {
@@ -910,6 +1044,8 @@ export default {
   gap: 12px;
   flex-wrap: wrap;
   margin-top: auto;
+  max-height: 112px;
+  overflow: hidden;
 }
 
 .tag-row {
@@ -958,6 +1094,7 @@ export default {
   flex-wrap: wrap;
   gap: 8px;
   align-items: center;
+  justify-content: flex-end;
 }
 
 .success-btn,
@@ -1071,6 +1208,100 @@ export default {
   width: 100%;
   max-width: 400px;
   box-shadow: 0 12px 32px rgba(0, 0, 0, 0.1);
+}
+
+.detail-modal {
+  max-width: 760px;
+  max-height: 84vh;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.detail-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.detail-kicker {
+  margin: 0 0 6px;
+  text-transform: uppercase;
+  letter-spacing: 0;
+  font-size: 12px;
+  font-weight: 800;
+  color: #4231cf;
+}
+
+.detail-header h3 {
+  margin: 0;
+  font-family: "Nunito Sans", sans-serif;
+  font-size: 24px;
+  line-height: 1.2;
+}
+
+.detail-meta {
+  margin: 8px 0 0;
+  color: #777586;
+  font-size: 13px;
+}
+
+.icon-close-btn {
+  border: 0;
+  background: #efecff;
+  color: #4231cf;
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  flex: none;
+}
+
+.detail-scroll {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  overflow: auto;
+  padding-right: 4px;
+}
+
+.detail-media img,
+.detail-preview img {
+  width: 100%;
+  max-height: 320px;
+  object-fit: cover;
+  border-radius: 10px;
+  border: 1px solid #e2e0fc;
+}
+
+.detail-meta-stack {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.detail-content {
+  background: #f5f2ff;
+  border: 1px solid #e2e0fc;
+  border-radius: 10px;
+  padding: 16px;
+}
+
+.detail-content p {
+  margin: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  line-height: 1.65;
+}
+
+.detail-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  flex-wrap: wrap;
 }
 .modal-content h3 {
   margin: 0 0 12px;

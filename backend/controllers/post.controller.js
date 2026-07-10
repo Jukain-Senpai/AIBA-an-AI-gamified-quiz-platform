@@ -1,6 +1,7 @@
 const prisma = require("../utils/prisma");
 const { canManageContent, canAccessPost, isAdminRole } = require("../utils/access");
 const { detectProhibitedLanguage, moderateContent } = require("../services/moderation.service");
+const { createNotification } = require("../services/notification.service");
 
 const createPost = async (req, res) => {
     try {
@@ -14,7 +15,6 @@ const createPost = async (req, res) => {
             title,
             content,
             category: category || "General",
-            tags: tags || [],
         };
         const profanityCheck = detectProhibitedLanguage(moderationPayload);
         if (profanityCheck.blocked) {
@@ -29,7 +29,6 @@ const createPost = async (req, res) => {
                 content,
                 image: image || null,
                 category,
-                tags: tags || [],
                 moderationStatus: moderation.flagged ? "PENDING" : "APPROVED",
                 moderationReason: moderation.reason || null,
                 moderatedAt: new Date(),
@@ -98,7 +97,6 @@ const getAllPosts = async (req, res) => {
                     content: true,
                     image: true,
                     category: true,
-                    tags: true,
                     upvotes: true,
                     createdAt: true,
                     updatedAt: true,
@@ -144,7 +142,6 @@ const getPostById = async (req, res) => {
                 content: true,
                 image: true,
                 category: true,
-                tags: true,
                 upvotes: true,
                 createdAt: true,
                 updatedAt: true,
@@ -164,9 +161,21 @@ const getPostById = async (req, res) => {
                                 { authorId: req.user.id },
                             ],
                         },
-                    include: {
+                    select: {
+                        id: true,
+                        content: true,
+                        image: true,
+                        upvotes: true,
+                        moderationStatus: true,
+                        moderationReason: true,
+                        moderatedAt: true,
+                        createdAt: true,
+                        updatedAt: true,
+                        authorId: true,
+                        postId: true,
+                        parentCommentId: true,
                         author: {
-                            select: { id: true, username: true, avatar: true, title: true },
+                            select: { id: true, username: true, avatar: true, title: true, level: true },
                         },
                     },
                     orderBy: {
@@ -255,16 +264,33 @@ const deletePost = async (req, res) => {
     try {
         const { id } = req.params;
         const post = await prisma.post.findUnique({ where: { id: Number(id) } });
+        const postOwner = await prisma.post.findUnique({
+            where: { id: Number(id) },
+            select: { id: true, authorId: true },
+        });
 
-        if (!post) {
+        if (!postOwner) {
             return res.status(404).json({ message: "Post not found" });
         }
 
-        if (!canManageContent(req.user, post.authorId)) {
+        if (!canManageContent(req.user, postOwner.authorId)) {
             return res.status(403).json({ message: "Unauthorized" });
         }
 
+        const isAdminDeleted = String(req.user?.role || "").toLowerCase() === "admin" && postOwner.authorId !== req.user.id;
         await prisma.post.delete({ where: { id: Number(id) } });
+        if (isAdminDeleted) {
+            await createNotification({
+                recipientId: postOwner.authorId,
+                actorId: req.user.id,
+                type: "content_deleted",
+                title: "Your post was deleted",
+                message: "An admin deleted one of your forum posts.",
+                link: "/forum",
+                targetType: "post",
+                targetId: Number(id),
+            });
+        }
         res.status(200).json({ message: "Post deleted successfully" });
     } catch (error) {
         console.error(error);

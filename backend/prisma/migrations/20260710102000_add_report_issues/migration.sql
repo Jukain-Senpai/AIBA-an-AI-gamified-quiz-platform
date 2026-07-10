@@ -1,0 +1,11 @@
+CREATE TABLE IF NOT EXISTS "ReportIssue" (
+    "id" SERIAL PRIMARY KEY,
+    "subject" TEXT NOT NULL,
+    "details" TEXT NOT NULL,
+    "page" TEXT,
+    "status" TEXT NOT NULL DEFAULT 'OPEN',
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "reporterId" INTEGER NOT NULL,
+    CONSTRAINT "ReportIssue_reporterId_fkey" FOREIGN KEY ("reporterId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE
+);

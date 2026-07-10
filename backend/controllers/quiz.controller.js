@@ -1,6 +1,7 @@
 const prisma = require("../utils/prisma");
 const { canAccessQuiz, canManageContent, isAdminRole } = require("../utils/access");
 const { detectProhibitedLanguage, moderateContent } = require("../services/moderation.service");
+const { createNotification } = require("../services/notification.service");
 
 const buildQuizModerationPayload = (quiz, questions) => ({
     title: quiz?.title || "",
@@ -425,6 +426,7 @@ const deleteQuiz = async (req, res) => {
             return res.status(403).json({ message: "Unauthorized" });
         }
 
+        const isAdminDeleted = String(req.user?.role || "").toLowerCase() === "admin" && quiz.creatorId !== req.user.id;
         const questions = await prisma.question.findMany({
             where: { quizId: quiz.id },
             select: { id: true },
@@ -457,6 +459,19 @@ const deleteQuiz = async (req, res) => {
                 where: { id: quiz.id },
             }),
         ]);
+
+        if (isAdminDeleted) {
+            await createNotification({
+                recipientId: quiz.creatorId,
+                actorId: req.user.id,
+                type: "content_deleted",
+                title: "Your quiz was deleted",
+                message: "An admin deleted one of your quizzes.",
+                link: "/quizzes",
+                targetType: "quiz",
+                targetId: quiz.id,
+            });
+        }
 
         res.status(200).json({ message: "Quiz deleted successfully" });
     } catch (error) {

@@ -15,6 +15,7 @@ import Skills from "../views/Skills.vue";
 import CommunityHub from "../views/CommunityHub.vue";
 import Discussion from "../views/Discussion.vue";
 import CreatePost from "../views/CreatePost.vue";
+import ReportIssue from "../views/ReportIssue.vue";
 import Admin from "../views/Admin.vue";
 import { getCurrentUserRole } from "../services/session";
 
@@ -35,6 +36,7 @@ const routes = [
     { path: "/forum", component: CommunityHub },
     { path: "/forum/post/:id", component: Discussion },
     { path: "/forum/create", component: CreatePost },
+    { path: "/forum/report", component: ReportIssue },
     { path: "/admin", component: Admin, meta: { requiresAdmin: true } },
 ];
 

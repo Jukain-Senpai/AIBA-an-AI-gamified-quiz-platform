@@ -1,11 +1,13 @@
 const prisma = require("../utils/prisma");
 const { Prisma } = require("@prisma/client");
 const { isAdminRole } = require("../utils/access");
+const { createNotification } = require("../services/notification.service");
 
 const modelMap = {
     quiz: { model: prisma.quiz, idField: "id" },
     post: { model: prisma.post, idField: "id" },
     comment: { model: prisma.comment, idField: "id" },
+    report: { model: prisma.reportIssue, idField: "id" },
 };
 
 const quizSelect = {
@@ -30,7 +32,6 @@ const postSelect = {
     content: true,
     image: true,
     category: true,
-    tags: true,
     upvotes: true,
     moderationStatus: true,
     moderationReason: true,
@@ -53,6 +54,45 @@ const commentSelect = {
     post: { select: { id: true, title: true } },
 };
 
+const reportSelect = {
+    id: true,
+    subject: true,
+    details: true,
+    page: true,
+    status: true,
+    createdAt: true,
+    updatedAt: true,
+    reporter: { select: { id: true, username: true, email: true } },
+};
+
+const getTargetRecipient = async (type, id, client = prisma) => {
+    if (type === "quiz") {
+        const quiz = await client.quiz.findUnique({
+            where: { id: Number(id) },
+            select: { creatorId: true },
+        });
+        return { recipientId: quiz?.creatorId || null, link: "/quizzes" };
+    }
+
+    if (type === "post") {
+        const post = await client.post.findUnique({
+            where: { id: Number(id) },
+            select: { authorId: true },
+        });
+        return { recipientId: post?.authorId || null, link: "/forum" };
+    }
+
+    if (type === "comment") {
+        const comment = await client.comment.findUnique({
+            where: { id: Number(id) },
+            select: { authorId: true, postId: true },
+        });
+        return { recipientId: comment?.authorId || null, link: comment?.postId ? `/forum/post/${comment.postId}` : "/forum" };
+    }
+
+    return { recipientId: null, link: null };
+};
+
 const getAdminContent = async (req, res) => {
     try {
         if (!isAdminRole(req.user?.role)) {
@@ -72,7 +112,8 @@ const getAdminContent = async (req, res) => {
                 prisma.post.count({ where: { moderationStatus: statusUpper } }),
                 prisma.comment.count({ where: { moderationStatus: statusUpper } }),
             ]);
-            return res.json({ pendingQuizzes: quizzes, pendingPosts: posts, pendingComments: comments });
+            const reports = await prisma.reportIssue.count({ where: { status: "OPEN" } });
+            return res.json({ pendingQuizzes: quizzes, pendingPosts: posts, pendingComments: comments, reportIssues: reports });
         }
 
         let items = [];
@@ -85,6 +126,7 @@ const getAdminContent = async (req, res) => {
             const qCond = search ? Prisma.sql`"moderationStatus" = ${statusParam} AND ("title" ILIKE ${searchParam} OR "description" ILIKE ${searchParam})` : Prisma.sql`"moderationStatus" = ${statusParam}`;
             const pCond = search ? Prisma.sql`"moderationStatus" = ${statusParam} AND ("title" ILIKE ${searchParam} OR "content" ILIKE ${searchParam})` : Prisma.sql`"moderationStatus" = ${statusParam}`;
             const cCond = search ? Prisma.sql`"moderationStatus" = ${statusParam} AND "content" ILIKE ${searchParam}` : Prisma.sql`"moderationStatus" = ${statusParam}`;
+            const rCond = search ? Prisma.sql`"status" = 'OPEN' AND ("subject" ILIKE ${searchParam} OR "details" ILIKE ${searchParam})` : Prisma.sql`"status" = 'OPEN'`;
 
             const orderClause = sortDirection === "asc" ? Prisma.sql`ASC` : Prisma.sql`DESC`;
 
@@ -94,6 +136,8 @@ const getAdminContent = async (req, res) => {
                 SELECT id, 'post' as type, "createdAt" FROM "Post" WHERE ${pCond}
                 UNION ALL
                 SELECT id, 'comment' as type, "createdAt" FROM "Comment" WHERE ${cCond}
+                UNION ALL
+                SELECT id, 'report' as type, "createdAt" FROM "ReportIssue" WHERE ${rCond}
                 ORDER BY "createdAt" ${orderClause}
                 LIMIT ${limitNum} OFFSET ${offset};
             `;
@@ -105,6 +149,8 @@ const getAdminContent = async (req, res) => {
                     SELECT COUNT(*) as c FROM "Post" WHERE ${pCond}
                     UNION ALL
                     SELECT COUNT(*) as c FROM "Comment" WHERE ${cCond}
+                    UNION ALL
+                    SELECT COUNT(*) as c FROM "ReportIssue" WHERE ${rCond}
                 ) as total;
             `;
 
@@ -118,23 +164,27 @@ const getAdminContent = async (req, res) => {
             const quizIds = result.filter(r => r.type === 'quiz').map(r => r.id);
             const postIds = result.filter(r => r.type === 'post').map(r => r.id);
             const commentIds = result.filter(r => r.type === 'comment').map(r => r.id);
+            const reportIds = result.filter(r => r.type === 'report').map(r => r.id);
 
-            const [quizzes, posts, comments] = await Promise.all([
+            const [quizzes, posts, comments, reports] = await Promise.all([
                 quizIds.length > 0 ? prisma.quiz.findMany({ where: { id: { in: quizIds } }, select: quizSelect }) : [],
                 postIds.length > 0 ? prisma.post.findMany({ where: { id: { in: postIds } }, select: postSelect }) : [],
                 commentIds.length > 0 ? prisma.comment.findMany({ where: { id: { in: commentIds } }, select: commentSelect }) : [],
+                reportIds.length > 0 ? prisma.reportIssue.findMany({ where: { id: { in: reportIds } }, select: reportSelect }) : [],
             ]);
 
             const itemMap = {
                 quiz: new Map(quizzes.map(q => [q.id, { ...q, type: 'quiz' }])),
                 post: new Map(posts.map(p => [p.id, { ...p, type: 'post' }])),
                 comment: new Map(comments.map(c => [c.id, { ...c, type: 'comment' }])),
+                report: new Map(reports.map(r => [r.id, { ...r, type: 'report' }])),
             };
 
             items = result.map(r => itemMap[r.type].get(r.id)).filter(Boolean);
         } else {
-            const model = modelMap[tab === "quizzes" ? "quiz" : tab === "posts" ? "post" : "comment"].model;
-            let where = { moderationStatus: statusUpper };
+            const key = tab === "quizzes" ? "quiz" : tab === "posts" ? "post" : tab === "comments" ? "comment" : "report";
+            const model = modelMap[key].model;
+            let where = key === "report" ? {} : { moderationStatus: statusUpper };
             
             if (search) {
                 if (tab === "quizzes") {
@@ -143,13 +193,19 @@ const getAdminContent = async (req, res) => {
                     where.OR = [{ title: { contains: search, mode: "insensitive" } }, { content: { contains: search, mode: "insensitive" } }];
                 } else if (tab === "comments") {
                     where.content = { contains: search, mode: "insensitive" };
+                } else if (tab === "reports") {
+                    where.OR = [{ subject: { contains: search, mode: "insensitive" } }, { details: { contains: search, mode: "insensitive" } }];
                 }
+            }
+
+            if (tab === "reports") {
+                where.status = "OPEN";
             }
 
             const [results, count] = await Promise.all([
                 model.findMany({
                     where,
-                    select: tab === "quizzes" ? quizSelect : tab === "posts" ? postSelect : commentSelect,
+                    select: tab === "quizzes" ? quizSelect : tab === "posts" ? postSelect : tab === "comments" ? commentSelect : reportSelect,
                     orderBy: { createdAt: sortDirection },
                     skip: offset,
                     take: limitNum,
@@ -158,7 +214,7 @@ const getAdminContent = async (req, res) => {
             ]);
             
             total = count;
-            items = results.map(r => ({ ...r, type: tab === "quizzes" ? "quiz" : tab === "posts" ? "post" : "comment" }));
+            items = results.map(r => ({ ...r, type: tab === "quizzes" ? "quiz" : tab === "posts" ? "post" : tab === "comments" ? "comment" : "report" }));
         }
 
         res.json({
@@ -214,6 +270,29 @@ const updateModerationStatus = async (req, res) => {
             return item;
         });
 
+        if (normalizedStatus === "REJECTED") {
+            const { recipientId, link } = await getTargetRecipient(type, id);
+            if (recipientId && recipientId !== req.user.id) {
+                const titleMap = {
+                    quiz: "Your quiz was rejected",
+                    post: "Your post was rejected",
+                    comment: "Your comment was rejected",
+                };
+                await createNotification({
+                    recipientId,
+                    actorId: req.user.id,
+                    type: "moderation_rejected",
+                    title: titleMap[type] || "Your content was rejected",
+                    message: moderationReason
+                        ? `Reason: ${moderationReason}`
+                        : "An admin rejected one of your submissions.",
+                    link,
+                    targetType: type,
+                    targetId: Number(id),
+                });
+            }
+        }
+
         res.json({ message: "Moderation status updated", item: updated });
     } catch (error) {
         console.error("Moderation update error:", error);
@@ -242,6 +321,8 @@ const bulkModerateContent = async (req, res) => {
             for (const item of items) {
                 if (!modelMap[item.type] || !item.id) continue;
 
+                const previous = await getTargetRecipient(item.type, item.id, tx);
+
                 await tx[item.type].update({
                     where: { [modelMap[item.type].idField]: Number(item.id) },
                     data: {
@@ -260,6 +341,29 @@ const bulkModerateContent = async (req, res) => {
                         reason: moderationReason || null,
                     }
                 });
+
+                if (normalizedStatus === "REJECTED") {
+                    const recipientId = previous?.recipientId;
+                    if (recipientId && recipientId !== req.user.id) {
+                        await tx.notification.create({
+                            data: {
+                                recipientId,
+                                actorId: req.user.id,
+                                type: "moderation_rejected",
+                                title:
+                                    item.type === "quiz"
+                                        ? "Your quiz was rejected"
+                                        : item.type === "post"
+                                            ? "Your post was rejected"
+                                            : "Your comment was rejected",
+                                message: moderationReason ? `Reason: ${moderationReason}` : "An admin rejected one of your submissions.",
+                                link: previous?.link,
+                                targetType: item.type,
+                                targetId: Number(item.id),
+                            },
+                        });
+                    }
+                }
             }
         });
 
