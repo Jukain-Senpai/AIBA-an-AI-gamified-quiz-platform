@@ -1,105 +1,361 @@
-# AIBA-an-AI-gamified-quiz-platform
+# 🎮 AIBA - AI-Powered Gamified Quiz Platform
 
-God blessed me to pass to pass this final year project please
+AIBA is a full-stack AI-powered quiz platform designed to make online learning more engaging through RPG-inspired gamification, AI-assisted quiz generation, and a community discussion forum.
 
+The platform allows users to create quizzes manually or generate them using AI, complete quizzes to earn experience points (XP), level up, unlock skills, participate in discussions, and interact with other learners in a moderated community environment.
 
+This project was developed as a Final Year Project (FYP).
 
+---
 
+# ✨ Features
 
-\## Key Features
+## Authentication
 
-\- User-generated quizzes
+- User Registration
+- User Login
+- JWT Authentication
+- Password Reset via Email Verification
 
-\- Gamification (XP, levels, badges)
+---
 
-\- Community forum linked to quizzes
+## Quiz System
 
-\- AI-assisted quiz quality evaluation
+- Create quizzes manually
+- AI-generated quizzes using Groq (Llama 3.1)
+- Edit quizzes
+- Delete quizzes
+- Public / Private quizzes
+- Time-limited quizzes
+- Quiz attempt history
+- Automatic scoring
 
-\- AI-assisted forum moderation
+---
 
-\- Semantic similarity using vector embeddings
+## Gamification
 
+- Experience (XP) System
+- Leveling System
+- Win Streak Bonus
+- Skill Points
+- Skill Tree
+- Equip up to 3 Skills
+- RPG-inspired quiz assistance skills
 
+Examples include:
 
-\## Tech Stack
+- Battle Fury
+- Arcane Knowledge
+- Incantation
+- Crowd Mentality
 
-\- Frontend: Vue.js
+---
 
-\- Backend: Node.js + Express
+## Community Forum
 
-\- Database: PostgreSQL\* (placeholder for now, might change in the future)
+Users can
 
-\- AI \& Vector DB: Python, ChromaDB, Sentence Transformers
+- Create posts
+- Upload images
+- Comment
+- Nested replies
+- Upvote posts
+- Upvote comments
 
+---
 
+## AI Integration
 
-\## Architecture
+Powered by:
 
-The system follows a monolithic backend architecture with a separate AI service for embedding-based analysis.
+- Groq API
+- Llama 3.1 8B Instant
 
+Supports:
 
+- Automatic quiz generation
+- JSON-formatted quiz output
+- Demo fallback when AI service is unavailable
 
-\## Development Methodology
+---
 
-The project follows an iterative, sprint-based development approach with weekly milestones.
+## Moderation System
 
+Automatic content moderation includes:
 
+- Profanity detection
+- AI-assisted moderation
+- Pending approval workflow
+- Admin approval/rejection
+- Moderation logs
 
-\## Requirements List
+---
 
-Based on the current implementation and project design specifications, the following requirements have been defined:
+## Admin Dashboard
 
-### 1. User Management & Authentication
-- **User Registration**: Support for creating accounts with username, email, password, and avatar selection.
-- **Unified Login**: Allow users to log in using either their email or username.
-- **Secure Sessions**: Implementation of JWT-based authentication with protected routes.
-- **Profile Customization**: Users can edit their username, email, and choose from a gallery of RPG-themed avatars.
-- **User Progression**: Persistence of User Level, XP, and Skill Points (SP) in the database.
+Administrators can:
 
-### 2. Quiz System
-- **Quiz Playback**: Interactive interface for taking quizzes question-by-question with immediate feedback.
-- **Manual Creation**: Form-based interface for users to create their own quizzes with custom questions and 4 multiple-choice answers.
-- **AI Generation**: Integration with Groq (Llama 3.1) to generate full quizzes from a single text prompt.
-- **Score Calculation**: Logic to award points based on answer correctness and the use of specific skills.
+- Review quizzes
+- Review posts
+- Review comments
+- Review user reports
+- Approve or reject submissions
+- Bulk moderation
+- View moderation history
 
-### 3. Gamification & Skills (RPG System)
-- **Skill Tree**: A 3-path branching tree (Strength/Knight, Intelligence/Mage, Social/Bard) with tiered unlocking.
-- **Prerequisite Logic**: Enforced unlocking order where Tier 2 skills require the corresponding Tier 1 skill.
-- **In-Quiz Lifelines**: Functional integration of 6 unique skills:
-  - **Shield Mastery**: 1-turn immunity to wrong answers.
-  - **Battle Fury**: Removes 2 incorrect answers (50/50).
-  - **Incantation**: Removes 1 incorrect answer.
-  - **Arcane Knowledge**: Reveals the correct answer.
-  - **Healing Song**: Grants points even if the answer is incorrect.
-  - **Crowd Mentality**: Skips the question for half points.
+---
 
-### 4.Future Requirements 
-- **Community Forum**: A social space for users to discuss quizzes and share tips (Design Phase).
-- **Skill Selection**: A pre-quiz modal to select which unlocked skills to equip for the session (Design Phase).
-- **Advanced Dashboard**: Visualized analytics of user performance and recent activity trends.
-- **Leaderboards**: Competitive ranking system based on total XP and quiz accuracy.
+## Notification System
 
-## Architecture
+Real-time user notifications for:
 
-The system follows a decoupled architecture:
-- **Backend**: Node.js, Express, Prisma ORM, PostgreSQL.
-- **Frontend**: Vue.js 3, Vite, Vanilla CSS.
-- **AI Integration**: Groq API (Llama 3.1) for structured JSON generation.
+- Replies
+- Comment responses
+- Moderation results
+- Deleted content
+- Other user interactions
 
-## Development Methodology
+---
 
-The project follows an iterative, sprint-based development approach with weekly milestones.
+## Issue Reporting
 
-## Status
+Users can submit platform issues directly to administrators.
 
-**Current Version**: 1.0.0 (Skills System Integrated)
-- [x] Auth & Profile System
-- [x] Quiz Engine
-- [x] AI Generation Service
-- [x] Skill Tree & Lifelines
-- [ ] Quiz Results persistence
-- [ ] Community Forum
+---
 
+# 🛠 Tech Stack
 
+## Frontend
 
+- Vue.js
+- Vue Router
+- Axios
+- CSS
+
+---
+
+## Backend
+
+- Node.js
+- Express.js
+
+---
+
+## Database
+
+- PostgreSQL
+- Prisma ORM
+
+---
+
+## Authentication
+
+- JWT
+- bcrypt
+
+---
+
+## AI
+
+- Groq API
+- Llama 3.1 8B Instant
+
+---
+
+## Email
+
+- Nodemailer
+
+---
+
+# 📂 Project Structure
+
+```
+AIBA
+│
+├── frontend/
+│   ├── src/
+│   │   ├── views/
+│   │   ├── components/
+│   │   ├── services/
+│   │   └── router/
+│
+├── backend/
+│   ├── controllers/
+│   ├── middleware/
+│   ├── models/
+│   ├── routes/
+│   ├── services/
+│   ├── utils/
+│   └── prisma/
+│
+├── ai-service/
+│
+└── README.md
+```
+
+---
+
+# ⚙️ Installation
+
+## Clone
+
+```bash
+git clone https://github.com/yourusername/AIBA.git
+```
+
+---
+
+## Backend
+
+```bash
+cd backend
+npm install
+```
+
+Create
+
+```
+.env
+```
+
+Run
+
+```bash
+npm start
+```
+
+---
+
+## Frontend
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+---
+
+# 🔑 Environment Variables
+
+Backend requires
+
+```env
+DATABASE_URL=
+
+JWT_SECRET=
+
+GROQ_API_KEY=
+
+EMAIL_USER=
+
+EMAIL_PASS=
+```
+
+---
+
+# 📊 Database
+
+Main entities include
+
+- User
+- Quiz
+- Question
+- AnswerOption
+- Attempt
+- AttemptAnswer
+- Skill
+- UserSkill
+- Post
+- Comment
+- Notification
+- ReportIssue
+- ModerationLog
+
+---
+
+# 🔒 Authentication Flow
+
+```
+Register
+      ↓
+Hash Password
+      ↓
+Save User
+      ↓
+Generate JWT
+      ↓
+Frontend stores token
+      ↓
+Authenticated API Requests
+```
+
+---
+
+# 🤖 AI Quiz Generation Flow
+
+```
+User Prompt
+      ↓
+Backend API
+      ↓
+Groq API
+      ↓
+Llama 3.1
+      ↓
+Generate Quiz JSON
+      ↓
+Frontend Quiz Editor
+```
+
+---
+
+# 🏆 Quiz Flow
+
+```
+Create Quiz
+      ↓
+Moderation
+      ↓
+Publish
+      ↓
+User Attempts Quiz
+      ↓
+Score Calculation
+      ↓
+XP Reward
+      ↓
+Level Up
+      ↓
+Unlock Skills
+```
+
+---
+
+# 🚀 Future Improvements
+
+- Multiplayer quizzes
+- Real-time leaderboard
+- Friend system
+- Achievement badges
+- Mobile application
+- Adaptive AI learning paths
+- AI-generated explanations
+- Analytics dashboard
+
+---
+
+# 👨‍💻 Authors
+
+Final Year Project
+
+Faculty of Computer Science
+
+AI-Powered Gamified Quiz Platform
+
+---
+
+# 📄 License
+
+This project was developed for educational purposes.

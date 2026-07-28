@@ -1,6 +1,6 @@
 const prisma = require("../utils/prisma");
 const { Prisma } = require("@prisma/client");
-const { isAdminRole } = require("../utils/access");
+const { isAdminRole, isStaffRole } = require("../utils/access");
 const { createNotification } = require("../services/notification.service");
 
 const modelMap = {
@@ -22,7 +22,7 @@ const quizSelect = {
     moderationReason: true,
     moderatedAt: true,
     createdAt: true,
-    creator: { select: { id: true, username: true, email: true } },
+    creator: { select: { id: true, username: true, email: true, role: true } },
     _count: { select: { questions: true, attempts: true } },
 };
 
@@ -37,7 +37,7 @@ const postSelect = {
     moderationReason: true,
     moderatedAt: true,
     createdAt: true,
-    author: { select: { id: true, username: true, email: true } },
+    author: { select: { id: true, username: true, email: true, role: true } },
     _count: { select: { comments: true } },
 };
 
@@ -50,7 +50,7 @@ const commentSelect = {
     moderationReason: true,
     moderatedAt: true,
     createdAt: true,
-    author: { select: { id: true, username: true, email: true } },
+    author: { select: { id: true, username: true, email: true, role: true } },
     post: { select: { id: true, title: true } },
 };
 
@@ -62,7 +62,7 @@ const reportSelect = {
     status: true,
     createdAt: true,
     updatedAt: true,
-    reporter: { select: { id: true, username: true, email: true } },
+    reporter: { select: { id: true, username: true, email: true, role: true } },
 };
 
 const getTargetRecipient = async (type, id, client = prisma) => {
@@ -95,11 +95,11 @@ const getTargetRecipient = async (type, id, client = prisma) => {
 
 const getAdminContent = async (req, res) => {
     try {
-        if (!isAdminRole(req.user?.role)) {
+        if (!isStaffRole(req.user?.role)) {
             return res.status(403).json({ message: "Unauthorized" });
         }
 
-        const { tab = "all", page = 1, limit = 20, status = "PENDING", search = "", sortBy = "desc" } = req.query;
+        const { tab = "all", page = 1, limit = 20, status = "PENDING", search = "", searchUser = "", sortBy = "desc" } = req.query;
         const pageNum = Math.max(1, parseInt(page));
         const limitNum = Math.min(100, Math.max(1, parseInt(limit)));
         const offset = (pageNum - 1) * limitNum;
@@ -121,12 +121,27 @@ const getAdminContent = async (req, res) => {
 
         if (tab === "all") {
             const statusParam = Prisma.sql`${statusUpper}::"ModerationStatus"`;
-            const searchParam = search ? Prisma.sql`%${search}%` : null;
+            const searchParam = search ? `%${search}%` : null;
+            const searchUserParam = searchUser ? `%${searchUser}%` : null;
 
-            const qCond = search ? Prisma.sql`"moderationStatus" = ${statusParam} AND ("title" ILIKE ${searchParam} OR "description" ILIKE ${searchParam})` : Prisma.sql`"moderationStatus" = ${statusParam}`;
-            const pCond = search ? Prisma.sql`"moderationStatus" = ${statusParam} AND ("title" ILIKE ${searchParam} OR "content" ILIKE ${searchParam})` : Prisma.sql`"moderationStatus" = ${statusParam}`;
-            const cCond = search ? Prisma.sql`"moderationStatus" = ${statusParam} AND "content" ILIKE ${searchParam}` : Prisma.sql`"moderationStatus" = ${statusParam}`;
-            const rCond = search ? Prisma.sql`"status" = 'OPEN' AND ("subject" ILIKE ${searchParam} OR "details" ILIKE ${searchParam})` : Prisma.sql`"status" = 'OPEN'`;
+            let qCond = Prisma.sql`"moderationStatus" = ${statusParam}`;
+            let pCond = Prisma.sql`"moderationStatus" = ${statusParam}`;
+            let cCond = Prisma.sql`"moderationStatus" = ${statusParam}`;
+            let rCond = Prisma.sql`"status" = 'OPEN'`;
+
+            if (search) {
+                qCond = Prisma.sql`${qCond} AND ("title" ILIKE ${searchParam} OR "description" ILIKE ${searchParam})`;
+                pCond = Prisma.sql`${pCond} AND ("title" ILIKE ${searchParam} OR "content" ILIKE ${searchParam})`;
+                cCond = Prisma.sql`${cCond} AND "content" ILIKE ${searchParam}`;
+                rCond = Prisma.sql`${rCond} AND ("subject" ILIKE ${searchParam} OR "details" ILIKE ${searchParam})`;
+            }
+
+            if (searchUser) {
+                qCond = Prisma.sql`${qCond} AND "creatorId" IN (SELECT id FROM "User" WHERE "username" ILIKE ${searchUserParam})`;
+                pCond = Prisma.sql`${pCond} AND "authorId" IN (SELECT id FROM "User" WHERE "username" ILIKE ${searchUserParam})`;
+                cCond = Prisma.sql`${cCond} AND "authorId" IN (SELECT id FROM "User" WHERE "username" ILIKE ${searchUserParam})`;
+                rCond = Prisma.sql`${rCond} AND "reporterId" IN (SELECT id FROM "User" WHERE "username" ILIKE ${searchUserParam})`;
+            }
 
             const orderClause = sortDirection === "asc" ? Prisma.sql`ASC` : Prisma.sql`DESC`;
 
@@ -197,6 +212,11 @@ const getAdminContent = async (req, res) => {
                     where.OR = [{ subject: { contains: search, mode: "insensitive" } }, { details: { contains: search, mode: "insensitive" } }];
                 }
             }
+            
+            if (searchUser) {
+                const userField = tab === "quizzes" ? "creator" : tab === "reports" ? "reporter" : "author";
+                where[userField] = { username: { contains: searchUser, mode: "insensitive" } };
+            }
 
             if (tab === "reports") {
                 where.status = "OPEN";
@@ -231,7 +251,7 @@ const getAdminContent = async (req, res) => {
 
 const updateModerationStatus = async (req, res) => {
     try {
-        if (!isAdminRole(req.user?.role)) {
+        if (!isStaffRole(req.user?.role)) {
             return res.status(403).json({ message: "Unauthorized" });
         }
 
@@ -302,7 +322,7 @@ const updateModerationStatus = async (req, res) => {
 
 const bulkModerateContent = async (req, res) => {
     try {
-        if (!isAdminRole(req.user?.role)) {
+        if (!isStaffRole(req.user?.role)) {
             return res.status(403).json({ message: "Unauthorized" });
         }
 
@@ -376,7 +396,7 @@ const bulkModerateContent = async (req, res) => {
 
 const getModerationLogs = async (req, res) => {
     try {
-        if (!isAdminRole(req.user?.role)) {
+        if (!isStaffRole(req.user?.role)) {
             return res.status(403).json({ message: "Unauthorized" });
         }
 
@@ -391,7 +411,7 @@ const getModerationLogs = async (req, res) => {
                 take: limitNum,
                 orderBy: { createdAt: "desc" },
                 include: {
-                    admin: { select: { username: true, email: true } },
+                    admin: { select: { username: true, email: true, role: true } },
                 }
             }),
             prisma.moderationLog.count(),
@@ -409,9 +429,276 @@ const getModerationLogs = async (req, res) => {
     }
 };
 
+// --- NEW DASHBOARD & USER MANAGEMENT ---
+
+const getDashboardOverview = async (req, res) => {
+    try {
+        if (!isAdminRole(req.user?.role)) return res.status(403).json({ message: "Unauthorized" });
+
+        const [
+            totalUsers,
+            totalQuizzes,
+            totalPosts,
+            totalQuizAttempts,
+            pendingModeration,
+            openReports
+        ] = await Promise.all([
+            prisma.user.count(),
+            prisma.quiz.count(),
+            prisma.post.count(),
+            prisma.attempt.count(),
+            prisma.$queryRaw`
+                SELECT SUM(c) as count FROM (
+                    SELECT COUNT(*) as c FROM "Quiz" WHERE "moderationStatus" = 'PENDING'
+                    UNION ALL
+                    SELECT COUNT(*) as c FROM "Post" WHERE "moderationStatus" = 'PENDING'
+                    UNION ALL
+                    SELECT COUNT(*) as c FROM "Comment" WHERE "moderationStatus" = 'PENDING'
+                ) as total
+            `.then(r => Number(r[0]?.count || 0)),
+            prisma.reportIssue.count({ where: { status: 'OPEN' } })
+        ]);
+
+        // Recent Activities: We'll fetch the 5 most recent across some tables
+        const activities = [];
+
+        // 1. Quizzes
+        const recentQuizzes = await prisma.quiz.findMany({
+            take: 5,
+            orderBy: { createdAt: 'desc' },
+            select: { id: true, title: true, createdAt: true, creator: { select: { username: true } } }
+        });
+        recentQuizzes.forEach(q => activities.push({
+            id: `q_${q.id}`,
+            timestamp: q.createdAt,
+            text: `${q.creator?.username || 'Unknown'} created a quiz: ${q.title}`
+        }));
+
+        // 2. Reports
+        const recentReports = await prisma.reportIssue.findMany({
+            take: 5,
+            orderBy: { createdAt: 'desc' },
+            select: { id: true, subject: true, createdAt: true, reporter: { select: { username: true } } }
+        });
+        recentReports.forEach(r => activities.push({
+            id: `r_${r.id}`,
+            timestamp: r.createdAt,
+            text: `${r.reporter?.username || 'Unknown'} submitted a report: ${r.subject}`
+        }));
+
+        // 3. User Registrations
+        const recentUsers = await prisma.user.findMany({
+            take: 5,
+            orderBy: { createdAt: 'desc' },
+            select: { id: true, username: true, createdAt: true }
+        });
+        recentUsers.forEach(u => activities.push({
+            id: `u_${u.id}`,
+            timestamp: u.createdAt,
+            text: `New user registered: ${u.username || 'Unknown'}`
+        }));
+
+        // 4. Moderation Logs
+        const recentLogs = await prisma.moderationLog.findMany({
+            take: 5,
+            orderBy: { createdAt: 'desc' },
+            select: { id: true, action: true, targetType: true, createdAt: true, admin: { select: { username: true } } }
+        });
+        recentLogs.forEach(l => activities.push({
+            id: `l_${l.id}`,
+            timestamp: l.createdAt,
+            text: `${l.admin?.username || 'Admin'} ${l.action.toLowerCase()} a ${l.targetType}`
+        }));
+
+        activities.sort((a, b) => b.timestamp - a.timestamp);
+        const recentActivities = activities.slice(0, 10);
+
+        res.json({
+            stats: {
+                totalUsers,
+                totalQuizzes,
+                totalPosts,
+                totalQuizAttempts,
+                pendingModeration,
+                openReports
+            },
+            recentActivities
+        });
+    } catch (error) {
+        console.error("Overview error:", error);
+        res.status(500).json({ message: "Failed to load dashboard overview" });
+    }
+};
+
+const getUsersList = async (req, res) => {
+    try {
+        if (!isAdminRole(req.user?.role)) return res.status(403).json({ message: "Unauthorized" });
+
+        const { page = 1, limit = 20, search = "", role = "", status = "", sortBy = "desc" } = req.query;
+        const pageNum = Math.max(1, parseInt(page));
+        const limitNum = Math.min(100, Math.max(1, parseInt(limit)));
+        const offset = (pageNum - 1) * limitNum;
+
+        const where = {};
+        if (search) {
+            where.OR = [
+                { username: { contains: search, mode: 'insensitive' } },
+                { email: { contains: search, mode: 'insensitive' } }
+            ];
+        }
+        if (role) {
+            where.role = role.toLowerCase();
+        }
+        if (status) {
+            where.status = status.toUpperCase();
+        }
+
+        const [users, total] = await Promise.all([
+            prisma.user.findMany({
+                where,
+                skip: offset,
+                take: limitNum,
+                orderBy: { createdAt: sortBy === 'asc' ? 'asc' : 'desc' },
+                select: {
+                    id: true,
+                    username: true,
+                    email: true,
+                    role: true,
+                    level: true,
+                    xp: true,
+                    createdAt: true,
+                    status: true,
+                    lastLogin: true
+                }
+            }),
+            prisma.user.count({ where })
+        ]);
+
+        // Calculate useful statistics
+        const oneWeekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+        const startOfDay = new Date();
+        startOfDay.setHours(0, 0, 0, 0);
+
+        const [totalUsers, newUsersThisWeek, activeUsersToday, adminCount, modCount, bannedUsers] = await Promise.all([
+            prisma.user.count(),
+            prisma.user.count({ where: { createdAt: { gte: oneWeekAgo } } }),
+            prisma.user.count({ where: { lastLogin: { gte: startOfDay } } }),
+            prisma.user.count({ where: { role: 'admin' } }),
+            prisma.user.count({ where: { role: 'mod' } }),
+            prisma.user.count({ where: { status: 'SUSPENDED' } })
+        ]);
+
+        res.json({
+            items: users,
+            total,
+            page: pageNum,
+            totalPages: Math.ceil(total / limitNum),
+            stats: {
+                totalUsers,
+                newUsersThisWeek,
+                activeUsersToday,
+                adminCount,
+                modCount,
+                bannedUsers
+            }
+        });
+    } catch (error) {
+        console.error("Get users error:", error);
+        res.status(500).json({ message: "Failed to fetch users" });
+    }
+};
+
+const updateUserStatus = async (req, res) => {
+    try {
+        if (!isAdminRole(req.user?.role)) return res.status(403).json({ message: "Unauthorized" });
+
+        const { id } = req.params;
+        const { role, status } = req.body;
+
+        const data = {};
+        if (role) {
+            const normalizedRole = role.toLowerCase();
+            if (!["user", "admin", "mod"].includes(normalizedRole)) {
+                return res.status(400).json({ message: "Invalid role" });
+            }
+            data.role = normalizedRole;
+        }
+        if (status) data.status = status.toUpperCase();
+
+        const user = await prisma.user.update({
+            where: { id: Number(id) },
+            data,
+            select: { id: true, username: true, role: true, status: true }
+        });
+
+        res.json({ message: "User updated successfully", user });
+    } catch (error) {
+        console.error("Update user error:", error);
+        res.status(500).json({ message: "Failed to update user" });
+    }
+};
+
+const deleteUser = async (req, res) => {
+    try {
+        if (!isAdminRole(req.user?.role)) return res.status(403).json({ message: "Unauthorized" });
+
+        const { id } = req.params;
+
+        // Ensure not deleting self
+        if (Number(id) === req.user.id) {
+            return res.status(400).json({ message: "Cannot delete your own account" });
+        }
+
+        await prisma.user.delete({
+            where: { id: Number(id) }
+        });
+
+        res.json({ message: "User permanently deleted" });
+    } catch (error) {
+        console.error("Delete user error:", error);
+        res.status(500).json({ message: "Failed to delete user" });
+    }
+};
+
+const resetUserPasswordAdmin = async (req, res) => {
+    try {
+        if (!isAdminRole(req.user?.role)) return res.status(403).json({ message: "Unauthorized" });
+
+        const { id } = req.params;
+        
+        // Generate random 10-char password
+        const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%";
+        let tempPassword = "";
+        for (let i = 0; i < 10; i++) {
+            tempPassword += chars.charAt(Math.floor(Math.random() * chars.length));
+        }
+
+        const bcrypt = require("bcryptjs");
+        const hashedPassword = await bcrypt.hash(tempPassword, 10);
+
+        await prisma.user.update({
+            where: { id: Number(id) },
+            data: { password: hashedPassword }
+        });
+
+        res.json({ 
+            message: "Password reset successfully", 
+            temporaryPassword: tempPassword 
+        });
+    } catch (error) {
+        console.error("Admin reset password error:", error);
+        res.status(500).json({ message: "Failed to reset password" });
+    }
+};
+
 module.exports = {
     getAdminContent,
     updateModerationStatus,
     bulkModerateContent,
     getModerationLogs,
+    getDashboardOverview,
+    getUsersList,
+    updateUserStatus,
+    deleteUser,
+    resetUserPasswordAdmin,
 };

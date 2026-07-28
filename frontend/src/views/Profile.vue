@@ -31,6 +31,10 @@
               <span class="material-symbols-outlined" style="font-size: 14px;">verified</span>
               Admin
             </div>
+            <div v-else-if="isModUser" class="mod-badge">
+              <span class="material-symbols-outlined" style="font-size: 14px;">shield</span>
+              Mod
+            </div>
           </div>
         </div>
         <div class="banner-bottom">
@@ -63,6 +67,37 @@
       <!-- Main Layout -->
       <div class="main-layout">
         <div class="left-col">
+          <!-- Quiz Created -->
+          <div class="card">
+            <div class="card-header">
+              <h2>Quiz Created 📝</h2>
+              <router-link
+                :to="{ path: '/quizzes', query: { user: user.username } }"
+                class="see-all"
+              >Expand</router-link>
+            </div>
+            <div v-if="recentQuizzes.length > 0" class="quiz-mini-grid">
+              <router-link
+                v-for="quiz in recentQuizzes"
+                :key="quiz.id"
+                :to="`/quizzes/${quiz.id}`"
+                class="quiz-mini-card"
+              >
+                <div
+                  class="quiz-mini-thumb"
+                  :style="quiz.thumbnail ? { backgroundImage: `url(${getImageUrl(quiz.thumbnail)})`, backgroundSize: 'cover', backgroundPosition: 'center' } : {}"
+                >
+                  <span class="quiz-mini-cat">{{ quiz.category || 'General' }}</span>
+                </div>
+                <div class="quiz-mini-body">
+                  <p class="quiz-mini-title">{{ quiz.title }}</p>
+                  <p class="quiz-mini-meta">{{ quiz._count.questions }} Qs</p>
+                </div>
+              </router-link>
+            </div>
+            <p v-else class="empty-state">You haven't created any public quizzes yet.</p>
+          </div>
+
           <!-- Unlocked Skills -->
           <div class="card">
             <div class="card-header">
@@ -193,12 +228,14 @@ export default {
       loading: true,
       error: null,
       user: null,
+      recentQuizzes: [],
       isEditing: false,
       editTab: 'info',
       saving: false,
       uploadingAvatar: false,
       editError: null,
       isAdminUser: false,
+      isModUser: false,
       editForm: {
         username: '',
         email: '',
@@ -240,6 +277,7 @@ export default {
         const response = await api.get('/users/me');
         this.user = response.data;
         this.isAdminUser = (this.user.role || '').toLowerCase() === 'admin';
+        this.isModUser = (this.user.role || '').toLowerCase() === 'mod';
         this.editForm.username = this.user.username || '';
         this.editForm.email = this.user.email || '';
         this.editForm.avatar = this.user.avatar || 'NeonKnight_M.jpg';
@@ -296,10 +334,20 @@ export default {
       } finally {
         this.saving = false;
       }
-    }
+    },
+    async fetchRecentQuizzes() {
+      try {
+        const res = await api.get(`/users/${this.user.id}/quizzes`);
+        this.recentQuizzes = Array.isArray(res.data) ? res.data : [];
+      } catch (err) {
+        console.error('Failed to fetch recent quizzes', err);
+      }
+    },
   },
   mounted() {
-    this.fetchProfile();
+    this.fetchProfile().then(() => {
+      if (this.user) this.fetchRecentQuizzes();
+    });
   }
 };
 </script>
@@ -428,6 +476,18 @@ export default {
 .admin-badge {
   background: #d9fff0;
   color: #007657;
+  padding: 6px 14px;
+  border-radius: 9999px;
+  font-weight: 800;
+  font-size: 14px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.mod-badge {
+  background: #ffdad6;
+  color: #ba1a1a;
   padding: 6px 14px;
   border-radius: 9999px;
   font-weight: 800;
@@ -859,4 +919,81 @@ export default {
   margin-top: 1rem;
   text-align: center;
 }
+
+/* ── Quiz Created Mini Cards ── */
+.quiz-mini-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.75rem;
+}
+
+.quiz-mini-card {
+  display: flex;
+  flex-direction: column;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid #e2e0fc;
+  text-decoration: none;
+  color: inherit;
+  transition: transform 0.2s, box-shadow 0.2s;
+  background: #fcf8ff;
+}
+
+.quiz-mini-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 20px rgba(66, 49, 207, 0.12);
+}
+
+.quiz-mini-thumb {
+  height: 72px;
+  background: linear-gradient(135deg, #bfdbfe, #93c5fd);
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  padding: 6px;
+}
+
+.quiz-mini-cat {
+  font-family: 'Nunito Sans', sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  background: rgba(66, 49, 207, 0.75);
+  color: #fff;
+  padding: 2px 7px;
+  border-radius: 9999px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 90%;
+}
+
+.quiz-mini-body {
+  padding: 8px 10px;
+}
+
+.quiz-mini-title {
+  margin: 0 0 2px;
+  font-family: 'Nunito Sans', sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  color: #1a1a2e;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  line-height: 1.3;
+}
+
+.quiz-mini-meta {
+  margin: 0;
+  font-size: 11px;
+  color: #777586;
+}
+
+@media (max-width: 480px) {
+  .quiz-mini-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
 </style>

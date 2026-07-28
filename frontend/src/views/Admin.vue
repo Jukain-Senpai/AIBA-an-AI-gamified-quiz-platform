@@ -15,7 +15,7 @@
       </button>
     </section>
 
-    <section class="stats-grid" aria-label="Content summary">
+    <section class="stats-grid" aria-label="Content summary" v-if="!['overview', 'users'].includes(activeTab)">
       <article class="stat-card">
         <span class="stat-label">Pending Quizzes</span>
         <strong class="stat-value">{{ stats.pendingQuizzes }}</strong>
@@ -48,11 +48,15 @@
         </button>
       </div>
 
-      <p class="control-note">Moderation {{ activeTab === 'logs' ? 'History' : 'Queue' }}</p>
+      <p class="control-note">
+        <span v-if="activeTab === 'overview'">Platform Dashboard</span>
+        <span v-else-if="activeTab === 'users'">User Management</span>
+        <span v-else>Moderation {{ activeTab === 'logs' ? 'History' : 'Queue' }}</span>
+      </p>
     </section>
 
     <!-- Filters Bar -->
-    <section class="filters-bar" v-if="activeTab !== 'logs'">
+    <section class="filters-bar" v-if="!['logs', 'overview', 'users'].includes(activeTab)">
       <div class="search-wrap">
         <span class="material-symbols-outlined search-icon">search</span>
         <input 
@@ -61,6 +65,19 @@
           placeholder="Search by keyword..." 
           @keyup.enter="fetchContent(1)"
         />
+      </div>
+
+      <div class="search-wrap user-search-wrap">
+        <span class="material-symbols-outlined search-icon">person_search</span>
+        <input
+          type="text"
+          v-model="searchUser"
+          placeholder="Search by username..."
+          @keyup.enter="fetchContent(1)"
+        />
+        <button v-if="searchUser" class="clear-user-admin-btn" type="button" @click="searchUser = ''; fetchContent(1)" aria-label="Clear user filter">
+          <span class="material-symbols-outlined" style="font-size:14px">close</span>
+        </button>
       </div>
       
       <div class="filter-wrap">
@@ -82,7 +99,7 @@
     </section>
 
     <!-- Bulk Actions -->
-    <section class="bulk-actions" v-if="selectedItems.length > 0 && activeTab !== 'logs'">
+    <section class="bulk-actions" v-if="selectedItems.length > 0 && !['logs', 'overview', 'users'].includes(activeTab)">
       <div class="bulk-info">
         <span class="material-symbols-outlined">library_add_check</span>
         <span>{{ selectedItems.length }} item(s) selected</span>
@@ -105,8 +122,160 @@
     </section>
 
     <section v-else class="content-section">
+      <!-- Overview Tab -->
+      <template v-if="activeTab === 'overview'">
+        <div class="overview-container">
+          <div class="stats-grid dashboard-stats">
+            <article class="stat-card">
+              <span class="stat-label">Total Users</span>
+              <strong class="stat-value">{{ dashboardStats.totalUsers }}</strong>
+            </article>
+            <article class="stat-card">
+              <span class="stat-label">Total Quizzes</span>
+              <strong class="stat-value">{{ dashboardStats.totalQuizzes }}</strong>
+            </article>
+            <article class="stat-card">
+              <span class="stat-label">Total Forum Posts</span>
+              <strong class="stat-value">{{ dashboardStats.totalPosts }}</strong>
+            </article>
+            <article class="stat-card">
+              <span class="stat-label">Total Quiz Attempts</span>
+              <strong class="stat-value">{{ dashboardStats.totalQuizAttempts }}</strong>
+            </article>
+            <article class="stat-card warning-stat">
+              <span class="stat-label">Pending Moderation</span>
+              <strong class="stat-value">{{ dashboardStats.pendingModeration }}</strong>
+            </article>
+            <article class="stat-card danger-stat">
+              <span class="stat-label">Open Reports</span>
+              <strong class="stat-value">{{ dashboardStats.openReports }}</strong>
+            </article>
+          </div>
+          
+          <div class="recent-activities">
+            <h3>Recent Activities</h3>
+            <div v-if="recentActivities.length > 0" class="activity-list">
+              <div class="activity-item" v-for="act in recentActivities" :key="act.id">
+                <span class="activity-time">{{ new Date(act.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) }}</span>
+                <span class="activity-text">{{ act.text }}</span>
+              </div>
+            </div>
+            <p v-else class="empty-state">No recent activities.</p>
+          </div>
+        </div>
+      </template>
+
+      <!-- Users Tab -->
+      <template v-else-if="activeTab === 'users'">
+        <div class="users-container">
+          <div class="stats-grid users-stats-grid">
+            <article class="stat-card">
+              <span class="stat-label">Total Users</span>
+              <strong class="stat-value">{{ usersStats.totalUsers }}</strong>
+            </article>
+            <article class="stat-card">
+              <span class="stat-label">New This Week</span>
+              <strong class="stat-value">{{ usersStats.newUsersThisWeek }}</strong>
+            </article>
+            <article class="stat-card">
+              <span class="stat-label">Active Today</span>
+              <strong class="stat-value">{{ usersStats.activeUsersToday }}</strong>
+            </article>
+            <article class="stat-card">
+              <span class="stat-label">Admin Count</span>
+              <strong class="stat-value">{{ usersStats.adminCount }}</strong>
+            </article>
+            <article class="stat-card">
+              <span class="stat-label">Mod Count</span>
+              <strong class="stat-value">{{ usersStats.modCount }}</strong>
+            </article>
+            <article class="stat-card danger-stat">
+              <span class="stat-label">Banned Users</span>
+              <strong class="stat-value">{{ usersStats.bannedUsers }}</strong>
+            </article>
+          </div>
+
+          <!-- Users Filters -->
+          <section class="filters-bar" style="margin-top:20px;">
+            <div class="search-wrap">
+              <span class="material-symbols-outlined search-icon">search</span>
+              <input 
+                type="text" 
+                v-model="searchQuery" 
+                placeholder="Search username/email..." 
+                @keyup.enter="fetchContent(1)"
+              />
+            </div>
+            <div class="filter-wrap">
+              <span class="material-symbols-outlined">filter_list</span>
+              <select v-model="userRoleFilter" @change="fetchContent(1)">
+                <option value="">All Roles</option>
+                <option value="user">User</option>
+                <option value="admin">Admin</option>
+                <option value="mod">Mod</option>
+              </select>
+            </div>
+            <div class="filter-wrap">
+              <span class="material-symbols-outlined">filter_list</span>
+              <select v-model="userStatusFilter" @change="fetchContent(1)">
+                <option value="">All Statuses</option>
+                <option value="ACTIVE">Active</option>
+                <option value="SUSPENDED">Suspended</option>
+              </select>
+            </div>
+          </section>
+
+          <table class="logs-table users-table" style="margin-top:20px;">
+            <thead>
+              <tr>
+                <th>Username</th>
+                <th>Email</th>
+                <th>Role</th>
+                <th>Level / XP</th>
+                <th>Joined</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="user in items" :key="user.id">
+                <td><strong>{{ user.username || 'N/A' }}</strong></td>
+                <td>{{ user.email }}</td>
+                <td>
+                  <span class="status-pill" :class="{ approved: user.role === 'admin', mod: user.role === 'mod', neutral: user.role === 'user' }">
+                    {{ user.role }}
+                  </span>
+                </td>
+                <td>Lvl {{ user.level }} ({{ user.xp }} XP)</td>
+                <td>{{ formatDate(user.createdAt) }}</td>
+                <td>
+                  <span class="status-pill" :class="user.status === 'ACTIVE' ? 'approved' : 'rejected'">
+                    {{ user.status }}
+                  </span>
+                </td>
+                <td class="users-actions">
+                  <select @change="updateUserStatus(user, $event.target.value, null)" :value="user.role">
+                    <option value="user">Set User</option>
+                    <option value="admin">Set Admin</option>
+                    <option value="mod">Set Mod</option>
+                  </select>
+                  <button class="neutral-btn" @click="updateUserStatus(user, null, user.status === 'ACTIVE' ? 'SUSPENDED' : 'ACTIVE')">
+                    {{ user.status === 'ACTIVE' ? 'Suspend' : 'Unsuspend' }}
+                  </button>
+                  <button class="danger-btn" @click="resetUserPassword(user)">Reset Pwd</button>
+                  <button class="danger-btn" @click="deleteUser(user)">Delete</button>
+                </td>
+              </tr>
+              <tr v-if="items.length === 0">
+                <td colspan="7" class="empty-state">No users found.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </template>
+
       <!-- Audit Logs Tab -->
-      <template v-if="activeTab === 'logs'">
+      <template v-else-if="activeTab === 'logs'">
         <div class="logs-container">
           <table class="logs-table">
             <thead>
@@ -121,7 +290,7 @@
             <tbody>
               <tr v-for="log in logs" :key="log.id">
                 <td>{{ formatDate(log.createdAt) }}</td>
-                <td>{{ log.admin?.username || 'Unknown Admin' }}</td>
+                <td>{{ log.admin?.username || 'Unknown Admin' }}<span v-if="log.admin?.role === 'admin'" class="role-badge admin">Admin</span><span v-else-if="log.admin?.role === 'mod'" class="role-badge mod">Mod</span></td>
                 <td>
                   <span class="status-pill moderation" :class="log.action.toLowerCase()">
                     {{ log.action }}
@@ -175,7 +344,7 @@
               <div>
                 <p class="item-title">{{ getItemTitle(item) }}</p>
                 <p class="item-meta">
-                  by {{ getAuthorLabel(item) }} · {{ formatDate(item.createdAt) }}
+                  by {{ getAuthorLabel(item) }}<span v-if="getAuthorRole(item) === 'admin'" class="role-badge admin">Admin</span><span v-else-if="getAuthorRole(item) === 'mod'" class="role-badge mod">Mod</span> · {{ formatDate(item.createdAt) }}
                 </p>
               </div>
               <div class="pill-stack">
@@ -237,7 +406,7 @@
                   <span class="material-symbols-outlined">close</span>
                   Reject
                 </button>
-                <button class="danger-btn" type="button" @click.stop="deleteItem(item)">
+                <button v-if="canDeleteItem(item)" class="danger-btn" type="button" @click.stop="deleteItem(item)">
                   <span class="material-symbols-outlined">delete</span>
                   Delete
                 </button>
@@ -290,7 +459,7 @@
           <div>
             <p class="detail-kicker">{{ detailModal.item?.type || 'content' }}</p>
             <h3>{{ getItemTitle(detailModal.item) }}</h3>
-            <p class="detail-meta">by {{ getAuthorLabel(detailModal.item) }} · {{ formatDate(detailModal.item?.createdAt) }}</p>
+            <p class="detail-meta">by {{ getAuthorLabel(detailModal.item) }}<span v-if="getAuthorRole(detailModal.item) === 'admin'" class="role-badge admin">Admin</span><span v-else-if="getAuthorRole(detailModal.item) === 'mod'" class="role-badge mod">Mod</span> · {{ formatDate(detailModal.item?.createdAt) }}</p>
           </div>
           <button class="icon-close-btn" type="button" @click="closeItemModal">
             <span class="material-symbols-outlined">close</span>
@@ -352,10 +521,37 @@
             <span class="material-symbols-outlined">close</span>
             Reject
           </button>
-          <button class="danger-btn" type="button" @click="deleteFromDetail">
+          <button v-if="canDeleteItem" class="danger-btn" type="button" @click="deleteFromDetail">
             <span class="material-symbols-outlined">delete</span>
             Delete
           </button>
+        </div>
+      </div>
+    </div>
+
+    <div v-if="tempPasswordModal.show" class="modal-overlay" @click.self="closeTempPasswordModal">
+      <div class="modal-content">
+        <h3>Temporary Password</h3>
+        <p class="modal-copy">
+          A temporary password was generated for <strong>{{ tempPasswordModal.user?.username || 'this user' }}</strong>.
+        </p>
+        <div class="password-box">{{ tempPasswordModal.password }}</div>
+        <div class="modal-actions">
+          <button class="neutral-btn" type="button" @click="copyTempPassword">Copy Password</button>
+          <button class="success-btn" type="button" @click="closeTempPasswordModal">Close</button>
+        </div>
+      </div>
+    </div>
+
+    <div v-if="deleteConfirmModal.show" class="modal-overlay" @click.self="closeDeleteConfirmModal">
+      <div class="modal-content">
+        <h3>Delete User</h3>
+        <p class="modal-copy">
+          This will permanently remove <strong>{{ deleteConfirmModal.user?.username || 'this account' }}</strong> and their associated records.
+        </p>
+        <div class="modal-actions">
+          <button class="neutral-btn" type="button" @click="closeDeleteConfirmModal">Cancel</button>
+          <button class="danger-btn" type="button" @click="confirmDeleteUser">Delete Forever</button>
         </div>
       </div>
     </div>
@@ -365,6 +561,7 @@
 
 <script>
 import api, { getImageUrl } from "../services/api";
+import { isAdminUser, isModUser } from "../services/session";
 
 export default {
   name: "Admin",
@@ -372,8 +569,10 @@ export default {
     return {
       loading: true,
       error: null,
-      activeTab: "all",
-      tabs: [
+      activeTab: "overview",
+      allTabs: [
+        { key: "overview", label: "Overview", adminOnly: true },
+        { key: "users", label: "Users", adminOnly: true },
         { key: "all", label: "Unified Queue" },
         { key: "quizzes", label: "Quizzes" },
         { key: "posts", label: "Posts" },
@@ -381,6 +580,7 @@ export default {
         { key: "reports", label: "Report Issues" },
         { key: "logs", label: "Audit Logs" },
       ],
+      // Legacy moderation stats
       stats: {
         pendingQuizzes: 0,
         pendingPosts: 0,
@@ -388,16 +588,42 @@ export default {
         reportIssues: 0
       },
       
-      // Pagination & Filters
+      // Dashboard state
+      dashboardStats: {
+        totalUsers: 0,
+        totalQuizzes: 0,
+        totalPosts: 0,
+        totalQuizAttempts: 0,
+        pendingModeration: 0,
+        openReports: 0
+      },
+      recentActivities: [],
+
+      // Users state
+      usersStats: {
+        totalUsers: 0,
+        newUsersThisWeek: 0,
+        activeUsersToday: 0,
+        adminCount: 0,
+        modCount: 0,
+        bannedUsers: 0
+      },
+      
+      // Pagination & Filters (shared for content, users, and logs)
       items: [],
       logs: [],
       page: 1,
       totalPages: 1,
       limit: 15,
       searchQuery: "",
+      searchUser: "",
       statusFilter: "PENDING",
       sortBy: "desc",
       
+      // Users filters
+      userRoleFilter: "",
+      userStatusFilter: "",
+
       // Bulk Actions
       selectedItems: [],
 
@@ -411,6 +637,17 @@ export default {
       detailModal: {
         show: false,
         item: null,
+      },
+      
+      // Temp Password Modal
+      tempPasswordModal: {
+        show: false,
+        password: "",
+        user: null
+      },
+      deleteConfirmModal: {
+        show: false,
+        user: null
       }
     };
   },
@@ -418,13 +655,30 @@ export default {
     isAllSelected() {
       if (this.items.length === 0) return false;
       return this.selectedItems.length === this.items.length;
-    }
+    },
+    isAdmin() {
+      return isAdminUser();
+    },
+    isMod() {
+      return isModUser();
+    },
+    tabs() {
+      return this.allTabs.filter(tab => !tab.adminOnly || this.isAdmin);
+    },
   },
   watch: {
     activeTab() {
       this.searchQuery = "";
+      this.searchUser = "";
       this.selectedItems = [];
       this.fetchContent(1);
+    }
+  },
+  mounted() {
+    if (!this.isAdmin && this.activeTab === 'overview') {
+      this.activeTab = 'all';
+    } else {
+      this.refreshAll();
     }
   },
   methods: {
@@ -440,6 +694,13 @@ export default {
       const author = item.creator || item.author;
       if (!author) return "Unknown";
       return author.username || author.email?.split("@")[0] || "Unknown";
+    },
+    getAuthorRole(item) {
+      const author = item.creator || item.author;
+      return author?.role || null;
+    },
+    canDeleteItem() {
+      return this.isAdmin;
     },
     getItemTitle(item) {
       if (item.type === 'quiz') return item.title;
@@ -508,7 +769,25 @@ export default {
       this.selectedItems = [];
 
       try {
-        if (this.activeTab === 'logs') {
+        if (this.activeTab === 'overview') {
+          const res = await api.get('/admin/overview');
+          this.dashboardStats = res.data.stats;
+          this.recentActivities = res.data.recentActivities;
+        } else if (this.activeTab === 'users') {
+          const res = await api.get('/admin/users', {
+            params: {
+              page: this.page,
+              limit: this.limit,
+              search: this.searchQuery,
+              role: this.userRoleFilter,
+              status: this.userStatusFilter,
+              sortBy: this.sortBy
+            }
+          });
+          this.items = res.data.items || [];
+          this.totalPages = res.data.totalPages || 1;
+          this.usersStats = res.data.stats;
+        } else if (this.activeTab === 'logs') {
           const res = await api.get(`/admin/logs`, {
             params: { page: this.page, limit: this.limit }
           });
@@ -522,6 +801,7 @@ export default {
               limit: this.limit,
               status: this.statusFilter,
               search: this.searchQuery,
+              searchUser: this.searchUser,
               sortBy: this.sortBy
             }
           });
@@ -532,6 +812,57 @@ export default {
         this.handleError(err);
       } finally {
         this.loading = false;
+      }
+    },
+    async updateUserStatus(user, role, status) {
+      if (!window.confirm(`Are you sure you want to update this user's account?`)) return;
+      try {
+        await api.patch(`/admin/users/${user.id}`, { role, status });
+        this.fetchContent(this.page);
+      } catch (err) {
+        alert(err.response?.data?.message || "Failed to update user");
+      }
+    },
+    deleteUser(user) {
+      this.deleteConfirmModal = { show: true, user };
+    },
+    closeDeleteConfirmModal() {
+      this.deleteConfirmModal.show = false;
+      this.deleteConfirmModal.user = null;
+    },
+    async confirmDeleteUser() {
+      if (!this.deleteConfirmModal.user) return;
+      try {
+        await api.delete(`/admin/users/${this.deleteConfirmModal.user.id}`);
+        this.closeDeleteConfirmModal();
+        this.fetchContent(this.page);
+      } catch (err) {
+        alert(err.response?.data?.message || "Failed to delete user");
+      }
+    },
+    async resetUserPassword(user) {
+      try {
+        const res = await api.post(`/admin/users/${user.id}/reset-password`);
+        this.tempPasswordModal.password = res.data.temporaryPassword;
+        this.tempPasswordModal.user = user;
+        this.tempPasswordModal.show = true;
+      } catch (err) {
+        alert(err.response?.data?.message || "Failed to reset password");
+      }
+    },
+    closeTempPasswordModal() {
+      this.tempPasswordModal.show = false;
+      this.tempPasswordModal.password = "";
+      this.tempPasswordModal.user = null;
+    },
+    async copyTempPassword() {
+      if (!this.tempPasswordModal.password) return;
+      try {
+        await navigator.clipboard.writeText(this.tempPasswordModal.password);
+        alert("Temporary password copied to clipboard.");
+      } catch (err) {
+        console.error("Clipboard error", err);
+        alert("Unable to copy automatically. Please copy the password manually.");
       }
     },
     handleError(err) {
@@ -628,9 +959,6 @@ export default {
       }
       this.closeRejectModal();
     }
-  },
-  mounted() {
-    this.refreshAll();
   },
 };
 </script>
@@ -803,6 +1131,34 @@ export default {
 .search-icon {
   color: #777586;
   font-size: 20px;
+}
+
+/* Admin user filter */
+.user-search-wrap {
+  flex: 0 1 240px;
+  position: relative;
+}
+
+.user-search-wrap input {
+  padding: 10px 32px 10px 4px;
+  font-size: 13px;
+}
+
+.clear-user-admin-btn {
+  position: absolute;
+  right: 0;
+  background: none;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  color: #777586;
+  transition: color 0.15s;
+  padding: 0 4px;
+}
+
+.clear-user-admin-btn:hover {
+  color: #1a1a2e;
 }
 
 .filter-wrap {
@@ -1192,6 +1548,74 @@ export default {
 }
 
 /* Modals */
+.modal-copy {
+  margin: 0 0 12px;
+  color: #464555;
+  line-height: 1.55;
+}
+
+.password-box {
+  display: block;
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: 8px;
+  border: 1px dashed #4231cf;
+  background: #f5f2ff;
+  color: #1a1a2e;
+  font-weight: 700;
+  font-size: 16px;
+  letter-spacing: 0.04em;
+  margin-bottom: 16px;
+}
+
+.users-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.users-actions select,
+.users-actions button {
+  min-height: 36px;
+  border-radius: 6px;
+  border: 1px solid #e2e0fc;
+  padding: 0 10px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.users-actions select {
+  background: #fff;
+  color: #1a1a2e;
+}
+
+.role-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 7px;
+  border-radius: 9999px;
+  font-size: 11px;
+  font-weight: 800;
+  margin-left: 6px;
+  vertical-align: middle;
+}
+
+.role-badge.admin {
+  background: #d9fff0;
+  color: #007657;
+}
+
+.role-badge.mod {
+  background: #ffdad6;
+  color: #ba1a1a;
+}
+
+.status-pill.mod {
+  background: #ffdad6;
+  color: #ba1a1a;
+}
+
 .modal-overlay {
   position: fixed;
   inset: 0;

@@ -3,7 +3,7 @@
     <main class="auth-shell">
       <section class="auth-hero">
         <div class="hero-copy">
-          <img src="/src/assets/Logo.svg" class="brand-mark" alt="AIBA" />
+          <img src="/src/assets/icons/mascot/Welcome.png" class="brand-banner" alt="Welcome" />
           <h1>Welcome Back</h1>
           <p>Continue your learning streak, pick up your skills, and jump back into the platform.</p>
         </div>
@@ -132,10 +132,12 @@ export default {
   text-align: left;
 }
 
-.brand-mark {
-  width: 120px;
+.brand-banner {
+  width: 100%;
+  max-width: 520px;
   height: auto;
-  margin-bottom: 24px;
+  margin-bottom: 20px;
+  display: block;
 }
 
 .hero-copy h1 {

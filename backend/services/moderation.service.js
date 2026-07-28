@@ -1,4 +1,4 @@
-﻿const crypto = require("crypto");
+const crypto = require("crypto");
 const Groq = require("groq-sdk");
 
 const cache = new Map();
@@ -23,6 +23,25 @@ const PROFANITY_TERMS = [
     "shit",
     "slut",
     "whore",
+    // Vietnamese profanities
+    "cặc",
+    "lồn",
+    "địt",
+    "đéo",
+    "buồi",
+    "chịch",
+    "chó đẻ",
+    "vãi lồn",
+    "vcl",
+    "đm",
+    "dm",
+    "đcm",
+    "dcm",
+    "óc chó",
+    "thằng chó",
+    "con đĩ",
+    "điếm",
+    "hãm lồn",
 ];
 
 const normalizeText = (value) => {
@@ -45,7 +64,13 @@ const normalizeText = (value) => {
 };
 
 const normalizeForBlocklist = (value) => {
-    const raw = normalizeText(value).toLowerCase();
+    let raw = normalizeText(value).toLowerCase();
+
+    // Convert Vietnamese characters & remove accents/diacritics
+    raw = raw
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/đ/g, "d");
 
     const leetNormalized = raw
         .replace(/[0]/g, "o")

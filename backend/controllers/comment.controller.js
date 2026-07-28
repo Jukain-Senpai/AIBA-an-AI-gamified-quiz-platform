@@ -67,9 +67,9 @@ const createComment = async (req, res) => {
                 authorId: req.user.id,
             },
             include: {
-                author: {
-                    select: { id: true, username: true, avatar: true, title: true },
-                },
+        author: {
+                select: { id: true, username: true, avatar: true, title: true, role: true },
+            },
             },
         });
 

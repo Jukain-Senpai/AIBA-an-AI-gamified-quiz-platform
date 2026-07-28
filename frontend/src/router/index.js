@@ -54,7 +54,7 @@ router.beforeEach((to, from, next) => {
         return next('/login');
     }
 
-    if (to.meta.requiresAdmin && userRole !== 'admin') {
+    if (to.meta.requiresAdmin && !['admin', 'mod'].includes(userRole)) {
         return next('/dashboard');
     }
 

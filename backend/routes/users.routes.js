@@ -111,4 +111,41 @@ router.put("/me", authMiddleware, async (req, res) => {
         res.status(500).json({ error: "Failed to update profile" });
     }
 });
+// Get recent quizzes created by a specific user (public-facing, max 3)
+router.get("/:userId/quizzes", authMiddleware, async (req, res) => {
+    try {
+        const userId = Number(req.params.userId);
+        if (isNaN(userId)) {
+            return res.status(400).json({ error: "Invalid user ID" });
+        }
+
+        const quizzes = await prisma.quiz.findMany({
+            where: {
+                creatorId: userId,
+                isPublished: true,
+                moderationStatus: "APPROVED",
+            },
+            orderBy: { createdAt: "desc" },
+            take: 3,
+            select: {
+                id: true,
+                title: true,
+                description: true,
+                thumbnail: true,
+                category: true,
+                difficulty: true,
+                createdAt: true,
+                _count: { select: { questions: true } },
+                creator: { select: { id: true, username: true } },
+            },
+        });
+
+        res.json(quizzes);
+    } catch (error) {
+        console.error("Fetch user quizzes error:", error);
+        res.status(500).json({ error: "Failed to fetch user quizzes" });
+    }
+});
+
 module.exports = router;
+

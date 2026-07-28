@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <div class="quiz-list-wrapper">
     <!-- Cosmic Background -->
     <div class="bg-decoration">
@@ -28,6 +28,25 @@
             class="search-input"
             placeholder="Search for quizzes..."
           />
+        </div>
+        <div class="search-user-wrapper">
+          <span class="search-user-icon material-symbols-outlined">person_search</span>
+          <input
+            id="quiz-search-user"
+            v-model="searchUser"
+            type="text"
+            class="search-user-input"
+            placeholder="Filter by creator username..."
+          />
+          <button
+            v-if="searchUser"
+            class="clear-user-btn"
+            type="button"
+            @click="searchUser = ''"
+            aria-label="Clear user filter"
+          >
+            <span class="material-symbols-outlined" style="font-size:16px">close</span>
+          </button>
         </div>
       </section>
 
@@ -111,7 +130,7 @@
               </span>
 
               <p class="card-creator">
-                by <span class="creator-name">{{ getCreatorName(quiz.creator) }}</span>
+                by <span class="creator-name">{{ getCreatorName(quiz.creator) }}</span><span v-if="quiz.creator?.role === 'admin'" class="role-badge admin">Admin</span><span v-else-if="quiz.creator?.role === 'mod'" class="role-badge mod">Mod</span>
               </p>
 
               <!-- Metadata Row -->
@@ -173,6 +192,7 @@ export default {
       currentUserRole: null,
       openMenuId: null,
       searchQuery: '',
+      searchUser: '',
       activeCategory: 'General',
       displayCount: 9,
       categories: [
@@ -200,7 +220,7 @@ export default {
         list = list.filter(q => q.category === this.activeCategory);
       }
 
-      // Search filter
+      // Title / description search (AND with username filter)
       if (this.searchQuery.trim()) {
         const q = this.searchQuery.trim().toLowerCase();
         list = list.filter(
@@ -208,6 +228,15 @@ export default {
             quiz.title.toLowerCase().includes(q) ||
             (quiz.description && quiz.description.toLowerCase().includes(q))
         );
+      }
+
+      // Creator username filter (AND logic)
+      if (this.searchUser.trim()) {
+        const u = this.searchUser.trim().toLowerCase();
+        list = list.filter(quiz => {
+          const name = quiz.creator?.username || quiz.creator?.email?.split('@')[0] || '';
+          return name.toLowerCase().includes(u);
+        });
       }
 
       return list;
@@ -324,7 +353,17 @@ export default {
     },
   },
 
+  watch: {
+    searchUser() {
+      this.displayCount = 9;
+    },
+  },
+
   mounted() {
+    // Pre-fill username filter from URL query (e.g. from Profile "Expand" link)
+    if (this.$route?.query?.user) {
+      this.searchUser = this.$route.query.user;
+    }
     this.loadCurrentUser().finally(() => this.fetchQuizzes());
     window.addEventListener('click', this.closeMenus);
   },
@@ -492,6 +531,70 @@ export default {
   background: #e8e5ff;
   box-shadow: 0 0 0 3px rgba(66, 49, 207, 0.2);
 }
+
+/* ── User Search (secondary) ── */
+.search-user-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  margin-top: 10px;
+  width: fit-content;
+  min-width: 260px;
+  max-width: 400px;
+}
+
+.search-user-icon {
+  position: absolute;
+  left: 14px;
+  font-size: 18px;
+  color: #777586;
+  pointer-events: none;
+  user-select: none;
+}
+
+.search-user-input {
+  height: 42px;
+  padding: 0 36px 0 42px;
+  background: #f5f2ff;
+  border: 1.5px solid #c4c0ff;
+  border-radius: 9999px;
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  color: #1a1a2e;
+  transition: all 0.2s;
+  box-sizing: border-box;
+  width: 100%;
+}
+
+.search-user-input::placeholder {
+  color: #9999b0;
+}
+
+.search-user-input:focus {
+  outline: none;
+  background: #eeebff;
+  border-color: #4231cf;
+  box-shadow: 0 0 0 3px rgba(66, 49, 207, 0.15);
+}
+
+.clear-user-btn {
+  position: absolute;
+  right: 12px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  color: #777586;
+  transition: color 0.2s;
+}
+
+.clear-user-btn:hover {
+  color: #1a1a2e;
+}
+
+
 
 /* ── Category Tabs ── */
 .category-nav {
@@ -766,6 +869,27 @@ export default {
 .creator-name {
   font-weight: 600;
   color: #464555;
+}
+
+.role-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 7px;
+  border-radius: 9999px;
+  font-size: 10px;
+  font-weight: 800;
+  margin-left: 5px;
+  vertical-align: middle;
+}
+
+.role-badge.admin {
+  background: #d9fff0;
+  color: #007657;
+}
+
+.role-badge.mod {
+  background: #ffdad6;
+  color: #ba1a1a;
 }
 
 /* ── Meta Row ── */

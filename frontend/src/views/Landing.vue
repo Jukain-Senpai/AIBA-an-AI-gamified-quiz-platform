@@ -40,7 +40,7 @@
                     <div class="illustration-container">
                         <div class="blob primary-blob"></div>
                         <div class="blob secondary-blob"></div>
-                        <img src="https://lh3.googleusercontent.com/aida-public/AB6AXuDk2TZn2z96_oa6Yz9jYos-wRyHULct1XUnQ5oGdo-p6OOkk-TTIuTYEtfoPj7pwUWMcMtj_Or61N3boIMBoeoEL1UnK0irB2MbEGNZRyrzH1PUzCFtvoW80U2bSXZWjajJfLD7JgsRDffdIXsV6xgF05wqwlRjc93ObhuOt4fHUm4HMOhhxmKvAKYUVd0BzOc1Vn0z0dtEsB2ZyAVPUZVTXv-BIiLfHGoCB5T0U6FBvfzHUzbA3fAecicgCCPYwee1hpkRI44sYLcK" class="hero-illustration bouncy-hover" alt="Student learning" />
+                        <img src="../assets/icons/mascot/Cat Study.png" class="hero-illustration bouncy-hover" alt="Cat Study" />
                     </div>
                 </div>
             </div>
@@ -51,6 +51,10 @@
             <div class="features-header">
                 <h2>Level Up Your Learning</h2>
                 <div class="header-underline"></div>
+            </div>
+            
+            <div class="banner-container" style="display: flex; justify-content: center; margin-bottom: 4rem; padding: 0 1.5rem;">
+                <img src="../assets/icons/mascot/Studying together.png" alt="Studying Together banner" style="max-width: 700px; width: 100%; border-radius: 24px; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);" />
             </div>
             <div class="features-grid">
                 <!-- Feature Card 1 -->

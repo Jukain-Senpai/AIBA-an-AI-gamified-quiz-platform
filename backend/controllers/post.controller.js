@@ -1,5 +1,5 @@
 const prisma = require("../utils/prisma");
-const { canManageContent, canAccessPost, isAdminRole } = require("../utils/access");
+const { canManageContent, canAccessPost, isStaffRole } = require("../utils/access");
 const { detectProhibitedLanguage, moderateContent } = require("../services/moderation.service");
 const { createNotification } = require("../services/notification.service");
 
@@ -34,11 +34,11 @@ const createPost = async (req, res) => {
                 moderatedAt: new Date(),
                 authorId: req.user.id,
             },
-            include: {
-                author: {
-                    select: { id: true, username: true, avatar: true, title: true },
-                },
+        include: {
+            author: {
+                select: { id: true, username: true, avatar: true, title: true, role: true },
             },
+        },
         });
 
         res.status(201).json(newPost);
@@ -67,7 +67,7 @@ const getAllPosts = async (req, res) => {
             ];
         }
 
-        const finalWhere = isAdminRole(req.user?.role)
+        const finalWhere = isStaffRole(req.user?.role)
             ? where
             : {
                 AND: [
@@ -103,9 +103,9 @@ const getAllPosts = async (req, res) => {
                     moderationStatus: true,
                     moderationReason: true,
                     moderatedAt: true,
-                    author: {
-                        select: { id: true, username: true, avatar: true, title: true, level: true },
-                    },
+                author: {
+                    select: { id: true, username: true, avatar: true, title: true, level: true, role: true },
+                },
                     _count: {
                         select: { comments: true },
                     },
@@ -133,7 +133,7 @@ const getPostById = async (req, res) => {
     try {
         const { id } = req.params;
 
-        const isAdmin = isAdminRole(req.user?.role);
+        const isAdmin = isStaffRole(req.user?.role);
         const post = await prisma.post.findUnique({
             where: { id: Number(id) },
             select: {
@@ -150,7 +150,7 @@ const getPostById = async (req, res) => {
                 moderatedAt: true,
                 authorId: true,
                 author: {
-                    select: { id: true, username: true, avatar: true, title: true },
+                    select: { id: true, username: true, avatar: true, title: true, role: true },
                 },
                 comments: {
                     where: isAdmin
@@ -174,9 +174,9 @@ const getPostById = async (req, res) => {
                         authorId: true,
                         postId: true,
                         parentCommentId: true,
-                        author: {
-                            select: { id: true, username: true, avatar: true, title: true, level: true },
-                        },
+            author: {
+                    select: { id: true, username: true, avatar: true, title: true, level: true, role: true },
+                },
                     },
                     orderBy: {
                         createdAt: "asc",

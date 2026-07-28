@@ -25,10 +25,10 @@
     <main v-else class="tree-canvas">
       <!-- Root Node -->
       <div class="root-node-container">
-        <div class="root-node-glow">
-          <img src="/src/assets/icons/ui/star-fill.svg" class="root-icon" />
+        <div class="root-node-glow" style="overflow: hidden;">
+          <img :src="getAvatarUrl(userAvatar)" class="root-avatar" alt="User avatar" />
         </div>
-        <p class="root-label">Your Begins</p>
+        <p class="root-label">Choose Your Path</p>
         <div class="root-drop"></div>
       </div>
 
@@ -56,6 +56,7 @@
             @select="selectSkill"
           />
           <h3 class="branch-title primary-text">Mage</h3>
+          <img src="/src/assets/icons/mascot/Rabbit2.png" class="branch-mascot" alt="" />
         </div>
 
         <!-- Bard Branch -->
@@ -81,6 +82,7 @@
             @select="selectSkill"
           />
           <h3 class="branch-title tertiary-text">Bard</h3>
+          <img src="/src/assets/icons/mascot/Cat2.png" class="branch-mascot" alt="" />
         </div>
 
         <!-- Knight Branch -->
@@ -105,6 +107,7 @@
             @select="selectSkill"
           />
           <h3 class="branch-title secondary-text">Knight</h3>
+          <img src="/src/assets/icons/mascot/Wolf2.png" class="branch-mascot" alt="" />
         </div>
       </div>
 
@@ -210,7 +213,7 @@
 </template>
 
 <script>
-import api from '../services/api';
+import api, { getImageUrl } from '../services/api';
 import SkillNode from '../components/SkillNode.vue';
 
 export default {
@@ -228,7 +231,8 @@ export default {
       userSP: 0,
       userLevel: 1,
       selectedSkill: null,
-      savingLoadout: false
+      savingLoadout: false,
+      userAvatar: ''
     };
   },
   methods: {
@@ -246,6 +250,7 @@ export default {
         this.equippedSkills = Array.isArray(userRes.data.equippedSkills) ? userRes.data.equippedSkills : [];
         this.userSP = userRes.data.stats?.skillPoints || 0;
         this.userLevel = userRes.data.level || 1;
+        this.userAvatar = userRes.data.avatar || '';
         
       } catch (err) {
         if (err.response?.status === 401) {
@@ -283,6 +288,11 @@ export default {
       if (['Healing Song', 'Crowd Mentality'].includes(skill.name)) return 'tertiary';
       if (['Shield Mastery', 'Battle Fury'].includes(skill.name)) return 'secondary';
       return 'primary';
+    },
+    getAvatarUrl(filename) {
+      if (!filename) return '/src/assets/NeonKnight_M.jpg';
+      if (filename.startsWith('/uploads/') || filename.startsWith('http')) return getImageUrl(filename);
+      return `/src/assets/${filename}`;
     },
     getIconForSkill(name) {
       const iconMap = {
@@ -358,13 +368,14 @@ export default {
 
 <style scoped>
 .skill-tree-layout {
-  min-height: 100vh;
+  min-height: 100%;
   background-color: #1A1035;
   background-image: radial-gradient(circle at 50% 50%, #2A1B5A 0%, #1A1035 100%);
   color: #fcf8ff;
   font-family: 'Inter', sans-serif;
   position: relative;
   overflow-x: hidden;
+  overflow-y: hidden;
 }
 
 .cosmic-nebula {
@@ -375,9 +386,10 @@ export default {
   height: 100%;
   z-index: 0;
   pointer-events: none;
-  background: 
-      radial-gradient(circle at 20% 30%, rgba(66, 49, 207, 0.15) 0%, transparent 40%),
-      radial-gradient(circle at 80% 70%, rgba(0, 91, 66, 0.1) 0%, transparent 40%);
+  background: linear-gradient(rgba(26, 16, 53, 0.75), rgba(26, 16, 53, 0.85)), url('../assets/icons/mascot/Background.png') no-repeat center center;
+  background-size: cover;
+  filter: blur(6px);
+  transform: scale(1.03);
 }
 
 /* Static Page Title (positioned absolutely at the top of the relative layout, scrolls naturally) */
@@ -449,9 +461,9 @@ export default {
 /* Tree Canvas */
 .tree-canvas {
   position: relative;
-  min-height: 100vh;
+  min-height: auto;
   padding-top: 120px;
-  padding-bottom: 200px;
+  padding-bottom: 220px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -477,10 +489,11 @@ export default {
   box-shadow: 0 0 20px rgba(91, 79, 232, 0.4);
 }
 
-.root-icon {
-  width: 36px;
-  height: 36px;
-  filter: invert(1);
+.root-avatar {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
 }
 
 .root-label {
@@ -515,6 +528,11 @@ export default {
     grid-template-columns: 1fr;
     gap: 64px;
   }
+
+  .branch-mascot {
+    width: 64px;
+    height: 64px;
+  }
 }
 
 .branch-col {
@@ -523,6 +541,14 @@ export default {
   align-items: center;
   gap: 64px;
   position: relative;
+}
+
+.branch-mascot {
+  width: 300px;
+  height: 300px;
+  object-fit: contain;
+  filter: drop-shadow(0 8px 18px rgba(0, 0, 0, 0.25));
+  margin-top: 4px;
 }
 
 .horizontal-bar {

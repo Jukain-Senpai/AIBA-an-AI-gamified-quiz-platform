@@ -96,11 +96,17 @@ export default {
 }
 
 .skill-label {
-  margin-top: 16px;
+  position: absolute;
+  top: 50%;
+  right: calc(100% + 12px);
+  transform: translateY(-50%);
   font-family: 'Nunito Sans', sans-serif;
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 600;
-  text-align: center;
+  text-align: right;
+  white-space: nowrap;
+  pointer-events: none;
+  max-width: 140px;
 }
 
 /* Primary Theme (Mage) */

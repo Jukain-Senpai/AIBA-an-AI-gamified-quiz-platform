@@ -24,8 +24,17 @@ const getCurrentUserRole = () => {
 
 const isAdminUser = () => getCurrentUserRole() === "admin";
 
+const isModUser = () => getCurrentUserRole() === "mod";
+
+const isStaffUser = () => {
+    const role = getCurrentUserRole();
+    return role === "admin" || role === "mod";
+};
+
 export {
     decodeTokenPayload,
     getCurrentUserRole,
     isAdminUser,
+    isModUser,
+    isStaffUser,
 };

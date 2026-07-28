@@ -1,5 +1,5 @@
 const prisma = require("../utils/prisma");
-const { canAccessQuiz, canManageContent, isAdminRole } = require("../utils/access");
+const { canAccessQuiz, canManageContent, isStaffRole } = require("../utils/access");
 const { detectProhibitedLanguage, moderateContent } = require("../services/moderation.service");
 const { createNotification } = require("../services/notification.service");
 
@@ -187,13 +187,14 @@ const updateQuiz = async (req, res) => {
                     },
                 },
                 include: {
-                    creator: {
-                        select: {
-                            id: true,
-                            username: true,
-                            email: true,
-                        },
-                    },
+        creator: {
+            select: {
+                id: true,
+                username: true,
+                email: true,
+                role: true,
+            },
+        },
                     questions: {
                         orderBy: { order: "asc" },
                         include: {
@@ -358,6 +359,8 @@ const checkAnswer = async (req, res) => {
 
 const getAllQuizzes = async (req, res) => {
     try {
+        const { creatorUsername } = req.query;
+
         const select = {
             id: true,
             title: true,
@@ -376,6 +379,7 @@ const getAllQuizzes = async (req, res) => {
                     id: true,
                     email: true,
                     username: true,
+                    role: true,
                 },
             },
             _count: {
@@ -385,15 +389,35 @@ const getAllQuizzes = async (req, res) => {
             },
         };
 
-        const quizzes = await prisma.quiz.findMany({
-            where: isAdminRole(req.user?.role)
-                ? {}
-                : {
-                    OR: [
-                        { isPublished: true, moderationStatus: "APPROVED" },
-                        { creatorId: req.user.id },
-                    ],
+        // Build visibility filter
+        const visibilityFilter = isStaffRole(req.user?.role)
+            ? {}
+            : {
+                OR: [
+                    { isPublished: true, moderationStatus: "APPROVED" },
+                    { creatorId: req.user.id },
+                ],
+            };
+
+        // AND-combine with optional username filter
+        const creatorFilter = creatorUsername && creatorUsername.trim()
+            ? {
+                creator: {
+                    username: {
+                        contains: creatorUsername.trim(),
+                        mode: "insensitive",
+                    },
                 },
+            }
+            : {};
+
+        const where = {
+            ...visibilityFilter,
+            ...creatorFilter,
+        };
+
+        const quizzes = await prisma.quiz.findMany({
+            where,
             select,
             orderBy: {
                 createdAt: "desc",

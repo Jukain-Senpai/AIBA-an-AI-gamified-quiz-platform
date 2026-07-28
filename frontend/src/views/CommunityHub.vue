@@ -166,7 +166,7 @@
                     />
                     <span v-else>{{ (post.author.username || 'U').charAt(0).toUpperCase() }}</span>
                   </div>
-                  <span class="author-name">{{ post.author.username }}</span>
+                  <span class="author-name">{{ post.author.username }}<span v-if="post.author?.role === 'admin'" class="role-badge admin">Admin</span><span v-else-if="post.author?.role === 'mod'" class="role-badge mod">Mod</span></span>
                   <span class="author-level">LEVEL {{ post.author.level || 1 }}</span>
                   <span class="post-time">• {{ formatTime(post.createdAt) }}</span>
                 </div>
@@ -971,6 +971,27 @@ export default {
   font-size: 14px;
   font-weight: 600;
   color: #1a1a2e;
+}
+
+.role-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 7px;
+  border-radius: 9999px;
+  font-size: 10px;
+  font-weight: 800;
+  margin-left: 5px;
+  vertical-align: middle;
+}
+
+.role-badge.admin {
+  background: #d9fff0;
+  color: #007657;
+}
+
+.role-badge.mod {
+  background: #ffdad6;
+  color: #ba1a1a;
 }
 
 .author-level {

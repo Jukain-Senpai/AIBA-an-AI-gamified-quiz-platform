@@ -3,7 +3,7 @@
     <main class="auth-shell">
       <section class="auth-hero">
         <div class="hero-copy">
-          <img src="/src/assets/Logo.svg" class="brand-mark" alt="AIBA" />
+          <img src="/src/assets/icons/mascot/Logo.png" class="brand-mark" alt="AIBA" />
           <h1>New Password</h1>
           <p>Choose a strong new password and confirm it to finish resetting your account.</p>
         </div>
@@ -164,9 +164,10 @@ export default {
 }
 
 .brand-mark {
-  width: 120px;
+  width: 160px;
   height: auto;
   margin-bottom: 24px;
+  display: block;
 }
 
 .hero-copy h1 {

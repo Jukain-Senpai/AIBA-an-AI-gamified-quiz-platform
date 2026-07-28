@@ -72,6 +72,16 @@ const loginUser = async ({ email, password }) => {
     throw new Error("Invalid password");
   }
 
+  if (user.status === 'SUSPENDED') {
+    throw new Error("Account suspended");
+  }
+
+  // Update last login
+  await prisma.user.update({
+    where: { id: user.id },
+    data: { lastLogin: new Date() }
+  });
+
   return user;
 };
 

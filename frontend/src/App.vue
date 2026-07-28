@@ -1,17 +1,12 @@
 <template>
   <div class="app-wrapper">
 
-    <div v-if="!isQuizPlayRoute" class="page-indicator">
-      <span class="indicator-dot"></span>
-      <span class="indicator-text">{{ currentPageName }}</span>
-    </div>
-
     <nav v-if="!isQuizPlayRoute" class="navbar">
 
       <div class="nav-left">
         
         <img
-          src="/src/assets/Logo.svg" 
+          src="/src/assets/icons/mascot/Logo.png" 
           alt="AIBA Logo" 
           class="logo-icon"
         />
@@ -41,7 +36,7 @@
             <img src="/src/assets/Forum.svg" class="nav-icon" />
             <span>Forum</span>
           </router-link>
-          <router-link v-if="isAdminUser" to="/admin" class="nav-item">
+          <router-link v-if="isStaffCheck" to="/admin" class="nav-item">
             <img src="/src/assets/Dashboard.svg" class="nav-icon" />
             <span>Admin</span>
           </router-link>
@@ -77,7 +72,7 @@
             </transition>
           </div>
           <router-link to="/profile" class="nav-item">
-            <span class="nav-avatar-frame" :class="{ admin: isAdminUser }">
+            <span class="nav-avatar-frame" :class="{ admin: currentUserRole === 'admin', mod: currentUserRole === 'mod' }">
               <img :src="navAvatarUrl" class="nav-avatar" alt="Profile" />
             </span>
             <span>Profile</span>
@@ -113,7 +108,7 @@
 
 <script>
 import api, { getImageUrl } from './services/api';
-import { getCurrentUserRole } from './services/session';
+import { getCurrentUserRole, isStaffUser } from './services/session';
 
 export default {
   data() {
@@ -143,24 +138,8 @@ export default {
     }
   },
   computed: {
-    currentPageName() {
-      const routeNames = {
-        '/': 'Home',
-        '/login': 'Login Page',
-        '/register': 'Register',
-        '/forgot-password': 'Forgot Password',
-        '/reset-password': 'Reset Password',
-        '/dashboard': 'Dashboard',
-        '/quizzes': 'Quizzes',
-        '/admin': 'Admin',
-        '/skills': 'Skills',
-        '/forum': 'Forum',
-        '/profile': 'Profile'
-      };
-      return routeNames[this.$route.path] || 'MysticQuest';
-    },
-    isAdminUser() {
-      return this.currentUserRole === 'admin';
+    isStaffCheck() {
+      return isStaffUser();
     },
     isQuizPlayRoute() {
       return this.$route.path.startsWith('/quizzes/') && this.$route.params.id;
@@ -289,30 +268,6 @@ body, html {
   background-color: #FFFDF7;
 }
 
-/* Page Indicator Bar */
-.page-indicator {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 6px 20px;
-  background: linear-gradient(90deg, #5B4FE8 0%, #a855f7 100%);
-  font-size: 0.8rem;
-  font-weight: 500;
-}
-
-.indicator-dot {
-  width: 8px;
-  height: 8px;
-  background: #06D6A0;
-  border-radius: 2px;
-  box-shadow: 0 0 6px rgba(6, 214, 160, 0.8);
-}
-
-.indicator-text {
-  color: #ffffff;
-  letter-spacing: 0.3px;
-  font-family: 'Nunito Sans', sans-serif;
-}
 
 /* 2. Full-Width Navbar */
 .navbar {
@@ -336,8 +291,11 @@ body, html {
 }
 
 .logo-icon {
-  width: 28px;
-  height: 28px;
+  width: auto;
+  height: 36px;
+  max-height: 44px;
+  object-fit: contain;
+  display: block;
 }
 
 .logo-text {
@@ -394,6 +352,12 @@ body, html {
   border-color: #007657;
   background: #d9fff0;
   box-shadow: 0 0 0 3px rgba(0, 118, 87, 0.14);
+}
+
+.nav-avatar-frame.mod {
+  border-color: #ba1a1a;
+  background: #ffdad6;
+  box-shadow: 0 0 0 3px rgba(186, 26, 26, 0.14);
 }
 
 .nav-avatar {

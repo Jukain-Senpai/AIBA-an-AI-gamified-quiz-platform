@@ -38,7 +38,7 @@
               <span v-else>{{ (post.author.username || 'U').charAt(0).toUpperCase() }}</span>
             </div>
             <div>
-              <div class="author-name">{{ post.author.username }}</div>
+              <div class="author-name">{{ post.author.username }}<span v-if="post.author?.role === 'admin'" class="role-badge admin">Admin</span><span v-else-if="post.author?.role === 'mod'" class="role-badge mod">Mod</span></div>
               <span class="author-level-badge">Level {{ post.author.level || 1 }} • {{ post.author.title || 'Member' }}</span>
             </div>
           </div>
@@ -86,15 +86,11 @@
       <!-- Reply Composer -->
       <section class="reply-composer">
         <h2 class="section-title">Post a Reply</h2>
-        <div v-if="replyTarget" class="reply-target-pill">
-          Replying to {{ replyTarget.author?.username || 'a comment' }}
-          <button type="button" @click="clearReplyTarget">Cancel</button>
-        </div>
         <div class="composer-card" :class="{ focused: composerFocused }">
           <textarea
             v-model="newComment"
             class="composer-textarea"
-            placeholder="Write your helpful reply here..."
+            :placeholder="replyTarget ? `Replying to ${replyTarget.author?.username || 'a comment'}...` : 'Write your helpful reply here...'"
             rows="4"
             @focus="composerFocused = true"
             @blur="composerFocused = false"
@@ -122,14 +118,23 @@
               <button type="button" @click="commentImage = null" style="position: absolute; top: 15px; left: 15px; background: #ba1a1a; color: white; border: none; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; cursor: pointer;">✕</button>
             </div>
             <p v-if="uploadingImage" style="padding: 10px; color: #4231cf; font-weight: bold; font-size: 14px; margin: 0; background: #fafafa;">Uploading image...</p>
-            
-            <button
-              class="btn-post-reply"
-              :disabled="!newComment.trim() || submittingComment"
-              @click="postComment"
-            >
-              {{ submittingComment ? 'Posting...' : 'Post Reply' }}
-            </button>
+            <div class="composer-actions">
+              <button
+                class="btn-post-reply"
+                :disabled="!newComment.trim() || submittingComment"
+                @click="postComment"
+              >
+                {{ submittingComment ? 'Posting...' : (replyTarget ? 'Post Reply' : 'Post Comment') }}
+              </button>
+              <button
+                v-if="replyTarget"
+                class="btn-cancel-reply"
+                type="button"
+                @click="clearReplyTarget"
+              >
+                Cancel
+              </button>
+            </div>
           </div>
         </div>
         <p v-if="commentError" class="error-msg">{{ commentError }}</p>
@@ -145,9 +150,12 @@
             :key="comment.id"
             :comment="comment"
             :can-delete="canDelete"
+            :active-reply-id="replyTarget?.id || null"
             @reply="startReply"
             @upvote="toggleCommentUpvote"
             @delete="deleteComment"
+            @submit-reply="submitInlineReply"
+            @cancel-reply="clearReplyTarget"
           />
         </div>
       </section>
@@ -299,6 +307,23 @@ export default {
     },
     clearReplyTarget() {
       this.replyTarget = null;
+    },
+    async submitInlineReply(payload) {
+      if (!payload?.content?.trim()) return;
+      this.submittingComment = true;
+      this.commentError = null;
+      try {
+        const res = await api.post(`/comments/post/${this.post.id}`, {
+          content: payload.content.trim(),
+          image: payload.image || null,
+          parentCommentId: payload.parentCommentId,
+        });
+        this.post.comments.push(res.data);
+      } catch (err) {
+        this.commentError = err.response?.data?.message || 'Failed to post reply.';
+      } finally {
+        this.submittingComment = false;
+      }
     },
     async toggleCommentUpvote(comment) {
       try {
@@ -490,6 +515,27 @@ export default {
   font-size: 16px;
   font-weight: 700;
   color: #1a1a2e;
+}
+
+.role-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 7px;
+  border-radius: 9999px;
+  font-size: 11px;
+  font-weight: 800;
+  margin-left: 6px;
+  vertical-align: middle;
+}
+
+.role-badge.admin {
+  background: #d9fff0;
+  color: #007657;
+}
+
+.role-badge.mod {
+  background: #ffdad6;
+  color: #ba1a1a;
 }
 
 .author-level-badge {

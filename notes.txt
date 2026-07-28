@@ -1,0 +1,2 @@
+This is a minimal note file created for the request.
+It uses very little token budget.

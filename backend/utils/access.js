@@ -5,6 +5,13 @@ const normalizeRole = (role) => {
 
 const isAdminRole = (role) => normalizeRole(role) === "admin";
 
+const isModRole = (role) => normalizeRole(role) === "mod";
+
+const isStaffRole = (role) => {
+    const r = normalizeRole(role);
+    return r === "admin" || r === "mod";
+};
+
 const isSameUser = (userId, ownerId) => {
     if (userId === undefined || userId === null || ownerId === undefined || ownerId === null) {
         return false;
@@ -48,6 +55,8 @@ const canAccessComment = (user, comment) => {
 module.exports = {
     normalizeRole,
     isAdminRole,
+    isModRole,
+    isStaffRole,
     isSameUser,
     normalizeModerationStatus,
     isApprovedModerationStatus,
