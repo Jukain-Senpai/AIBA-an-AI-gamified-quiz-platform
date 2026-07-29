@@ -1,5 +1,7 @@
 const express = require('express');
 const router = express.Router();
+// DEBUG: confirm auth routes loaded
+console.log('[DEBUG] Auth routes loaded');
 
 const {
      register,

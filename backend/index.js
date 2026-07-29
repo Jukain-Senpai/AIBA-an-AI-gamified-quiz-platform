@@ -27,6 +27,7 @@ app.use(cors({
         }
     },
     credentials: true,
+app.options('*', cors());
 }));
 
 const PORT = process.env.PORT || 5000;
@@ -60,6 +61,7 @@ app.use("/api/reports", reportIssueRoutes);
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/uploads", uploadRoutes);
+app.get("/api/health", (req, res) => res.json({ status: "ok", timestamp: Date.now() }));
 
 app.get("/", (req, res) => {
     res.send("AIBA Backend Server is still running!");
