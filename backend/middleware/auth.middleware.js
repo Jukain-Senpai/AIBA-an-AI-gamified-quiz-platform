@@ -11,10 +11,15 @@ const protect = (req, res, next) => {
         return res.status(401).json({ error: "Invalid token format"});
     }
 
-    const token = authHeader.split(" ")[1];
+    // Safely extract token; expect format 'Bearer <token>'
+    const parts = authHeader.split(' ');
+    if (parts.length !== 2) {
+        return res.status(401).json({ error: 'Invalid Authorization header format' });
+    }
+    const token = parts[1];
 
     try {
-        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        const decoded = jwt.verify(token, process.env.JWT_SECRET || "dev-secret");
         req.user = decoded;
         next();
     } catch (error) {

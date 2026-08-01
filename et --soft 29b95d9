@@ -1,0 +1,63 @@
+[33m37411e7[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m Fix auth service findUnique calls and add debug logs
+[33m849eee3[m Debugging deploy by set up the echo route to inspect the raw request
+[33m500e5fb[m Fix CORS preflight, add start script, add auth‑routes debug, remove invalid app.options line
+[33mb9da2dd[m Fix CORS preflight, add /api/health route, add auth‑middleware token validation, debug log for auth routes, and add npm start script
+[33m974752a[m fix: correct CORS syntax - move app.options outside cors middleware
+[33mbb354db[m fix: resolve CORS, authentication, and deployment issues
+[33mba224f2[m fix: update CORS to allow Netlify frontend origin
+[33m2abe66d[m fix: update API base URL for production deployment
+[33m29b95d9[m refactor: reorganize project structure and add moderator role
+[33mc63c560[m feat(forum, admin): add threaded replies, notifications, and report issue moderation
+[33m5c7c4f0[m feat(auth): implement password reset email flow and SMTP delivery support
+[33m5b97257[m feat(admin): overhaul moderator console with unified queue, bulk actions & audit log
+[33m6c16eaa[m[33m ([m[1;32magents/email-verification-code-issue-fix[m[33m)[m feat(quiz): add per-question timer with auto-reveal and auto-advance
+[33mfacdfb2[m feat(auth): redesign login and register frontend pages
+[33m133baf8[m feat(moderation): add AI review and profanity blocklist for user content
+[33m0cc4892[m feat: fix quiz media handling, add a moderation admin user page ,and more quiz management system
+[33m33321e8[m feat: implement platform-wide image upload support for quizzes, posts, comments and avatars
+[33m701327f[m feat(frontend): redesign quiz play screen and refine quiz header
+[33m56f93e5[m feat: Implement XP/leveling system, quiz result page, and revamp Create Quiz UI
+[33m511fb8e[m feat(forum): implement full-stack discussion forum
+[33mead56a8[m feat(frontend): redesign quiz browsing UI with search, category filters, and responsive cards
+[33m6ce646b[m feat(UI): redesign Skill Tree page with cosmic RPG theme and database binding
+[33mb0b19c0[m feat(frontend): redesign profile page and remove navbar logout link
+[33m74052f9[m feat(frontend): redesign dashboard, and global page shell layout
+[33m9c74784[m feat(ui): pivot platform background and landing page to using bright, game-style semantic CSS
+[33mb1836eb[m feat(skills): implement gamified skill tree and in-quiz lifelines
+[33m9af3d5b[m feat(ai): migrate quiz generation from Gemini to Groq API
+[33m796ce16[m feat(auth): fix registration flow and add username/avatar selection
+[33mfcd63e0[m feat(profile): implement user profile page with editable info and avatar selection
+[33m861d60f[m feat(ai-quiz): implement AI quiz generation, answer feedback, and fix user routes
+[33me3121de[m feat(ui): enhance user interface layout and responsiveness
+[33m8eaa75a[m feat(quiz): implement quiz creation with questions and answer options
+[33m03f7cda[m Fix quiz loading: send auth token, correct options field, and display answer buttons in QuizDetail
+[33ma208498[m feat: implement QuizDetail page for playing quizzes and checking answers
+[33m78a863a[m feat: implement quiz list frontend and add quiz routes (/quizzes, /quizzes/:id)
+[33me6f3dc7[m feat: implement quiz APIs (fetch quizzes and check answers)
+[33m1e485a3[m feat(skills): implement skill tree system
+[33m5f72812[m feat(backend): implement XP reward and automatic level progression after quiz attempt
+[33m7f414d6[m feat(user-progression): extend User model with xp, level, title, path and avatar fields
+[33ma36ed9e[m feat(dashboard): implement dynamic user dashboard with XP bar, avatar card, quick actions and stats
+[33me2d02cd[m feat(frontend): implement landing page with feature sections and placeholders for missing SVG assets
+[33mb57ba36[m refractor(frontend):Update frontend background and UI to use SVG asset icons for App, Login, and Register pages
+[33m071297b[m fix(backend): configure cors for frontend integration
+[33m24bf257[m refactor(frontend): redirect users to login after registration
+[33meb31ca6[m feat(frontend): implement login and register pages with jwt auth
+[33meaff398[m feat(frontend): initialize routing and axios api layer
+[33md7e93dc[m feat(quiz): add answer options with single-correct validation, combine questions with answers, and implement attempt submission with scoring
+[33me8da4ca[m feat(question): add answer options API
+[33m26f0927[m feat(quiz): implement protected quiz creation and questions
+[33mdc0d24b[m feat(backend): setup Prisma v7 schema and quiz creation API
+[33m1b93ba4[m feat(db): set up Prisma v7 config and initial quiz database schema
+[33mc14b2f7[m Set up and tested Register and Login API for swagger ui
+[33me66a668[m fix(prisma): migrate to Prisma v7 adapter-based PostgreSQL setup
+[33m0650680[m chore(db): initialize PostgreSQL and Prisma ORM
+[33m47f3db6[m Add JWT authentication middleware and protected routes
+[33md22a9f2[m Implement JWT login authentication with hashed passwords
+[33mcf5b49d[m Add User model and intergrate them into auth service
+[33m8082553[m Add auth service and POST register endpoint
+[33m87f5c0d[m Setup Express backend with auth route and controller structure
+[33m08b5ba0[m Initialize Express backend server
+[33m1be97dc[m Initialized vue set up for the frontend
+[33m66ce130[m Initial repository set up for the final year projects
+[33mfc67dec[m Initial commit

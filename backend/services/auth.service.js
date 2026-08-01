@@ -21,7 +21,7 @@ const registerUser = async ({ email, password, username, avatar }) => {
 
   // Check if email already exists
   const existingEmail = await prisma.user.findUnique({
-    where: { email },
+    where: { email: email },
   });
 
   if (existingEmail) {
@@ -30,7 +30,7 @@ const registerUser = async ({ email, password, username, avatar }) => {
 
   // Check if username already exists
   const existingUsername = await prisma.user.findUnique({
-    where: { username },
+    where: { username: username },
   });
 
   if (existingUsername) {

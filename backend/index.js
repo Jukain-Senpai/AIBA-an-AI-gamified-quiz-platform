@@ -7,14 +7,36 @@ const swaggerSpec = require("./swagger");
 const { logEmailMode } = require("./services/email.service");
 
 const app = express();
+
+// ===== CORS Configuration =====
+const allowedOrigins = [
+    "http://localhost:5173",
+    "https://aibagame.netlify.app"
+];
+
 app.use(cors({
-  origin: "http://localhost:5173",
-  credentials: true,
+    origin: function (origin, callback) {
+        if (!origin) return callback(null, true);
+        if (allowedOrigins.indexOf(origin) !== -1) {
+            callback(null, true);
+        } else {
+            console.log("Blocked by CORS:", origin);
+            callback(new Error('Not allowed by CORS'));
+        }
+    },
+    credentials: true,
 }));
+
+// Handle preflight requests
+
+
 const PORT = process.env.PORT || 5000;
+
 app.use(express.json());
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+
+// ===== Routes =====
 const authRoutes = require("./routes/auth.routes");
 const quizRoutes = require("./routes/quiz.routes");
 const answerOptionRoutes = require("./routes/answerOption.routes");
@@ -40,9 +62,10 @@ app.use("/api/notifications", notificationRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/uploads", uploadRoutes);
 
+app.get("/api/health", (req, res) => res.json({ status: "ok", timestamp: Date.now() }));
 
 app.get("/", (req, res) => {
-  res.send("AIBA Backend Server is still running!");
+    res.send("AIBA Backend Server is still running!");
 });
 
 app.listen(PORT, () => {
@@ -50,4 +73,4 @@ app.listen(PORT, () => {
     logEmailMode().catch((error) => {
         console.error("[Email] Startup verification failed:", error.message);
     });
-})
+});

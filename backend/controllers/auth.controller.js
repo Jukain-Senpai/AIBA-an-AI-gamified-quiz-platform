@@ -39,19 +39,16 @@ const register = async (req, res) => {
 
 const login = async (req, res) => {
     try {
+        console.log('[DEBUG] Login request body:', req.body);
         const user = await loginUser(req.body);
         const token = jwt.sign(
-            { id: user.id,
-            email: user.email, 
-            role: user.role || "user" },
-            process.env.JWT_SECRET,
+            { id: user.id, email: user.email, role: user.role || "user" },
+            process.env.JWT_SECRET || "dev-secret",
             { expiresIn: "1h" }
         );
-
-        res.json({
-            message: "Login successful",
-            token,
-        });
+        // Log token creation for debugging (remove in prod)
+        console.log('[DEBUG] Token generated for user', user.id);
+        res.json({ message: "Login successful", token });
     } catch (error) {
         res.status(401).json({
             error: error.message,

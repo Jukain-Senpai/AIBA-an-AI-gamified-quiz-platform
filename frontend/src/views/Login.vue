@@ -92,7 +92,7 @@ export default {
         localStorage.setItem('token', res.data.token);
         this.$router.push('/dashboard');
       } catch (err) {
-        this.error = err.response?.data?.message || 'Login failed.';
+        this.error = err.response?.data?.error || 'Login failed.';
       } finally {
         this.submitting = false;
       }

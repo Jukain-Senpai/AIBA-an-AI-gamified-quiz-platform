@@ -1,7 +1,9 @@
 import axios from 'axios';
 
+const API_BASE = 'http://localhost:5000';
+
 const api = axios.create({
-    baseURL: 'http://localhost:5000/api',
+    baseURL: `${API_BASE}/api`,
 });
 
 api.interceptors.request.use((config) => {
@@ -15,13 +17,12 @@ api.interceptors.request.use((config) => {
 export const getImageUrl = (path) => {
     if (!path) return '';
     if (path.startsWith('http') || path.startsWith('data:')) return path;
-    const baseUrl = 'http://localhost:5000';
-    return `${baseUrl}${path.startsWith('/') ? '' : '/'}${path}`;
+    return `${API_BASE}${path.startsWith('/') ? '' : '/'}${path}`;
 };
 
 export const uploadImage = async (file, scope = 'general') => {
     const formData = new FormData();
-    formData.append('scope', scope); // Must be appended before file for multer
+    formData.append('scope', scope);
     formData.append('image', file);
 
     const response = await api.post(`/uploads/image?scope=${encodeURIComponent(scope)}`, formData, {
